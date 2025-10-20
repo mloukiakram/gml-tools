@@ -6,370 +6,370 @@
     <title>VMTA Loop Generator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Gmail-inspired Modern UI - Polished */
+        /* --- UNIFIED AURA-THEME DESIGN SYSTEM V1 --- */
         :root {
-            --blue-600: #1A73E8;
-            --blue-700: #1967D2;
-            --grey-100: #F8F9FA;
-            --grey-200: #F1F3F4;
-            --grey-300: #DADCE0;
-            --grey-800: #3c4043;
-            --grey-900: #202124;
-            --form-bg: #ffffff;
-            --text-color: var(--grey-900);
-            --border-color: var(--grey-300);
-            --border-radius: 8px;
+            --bg-main: #f4f7f9;
+            --bg-card: rgba(255, 255, 255, 0.75);
+            --bg-card-solid: #ffffff;
+            --bg-control: rgba(248, 249, 250, 0.8);
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-tertiary: #adb5bd;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 2px var(--shadow-color);
+            --shadow-md: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px var(--shadow-color);
+            
+            --accent-blue: #0d6efd; --accent-blue-hover: #0b5ed7;
+            --accent-red: #dc3545; --accent-red-hover: #bb2d3b;
+            --accent-green: #198754;
+            --accent-orange: #fd7e14;
+            
+            --font-main: 'Inter', system-ui, sans-serif;
+            --font-mono: 'Fira Code', 'Courier New', monospace;
+            --transition-speed: 0.2s;
         }
+
+        /* --- BASE & LAYOUT --- */
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
-            font-family: "Roboto", "Segoe UI", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 24px;
+            font-family: var(--font-main); background-color: var(--bg-main); color: var(--text-primary);
+            margin: 0; padding: 2.5rem 1.5rem; display: flex; justify-content: center;
+            -webkit-font-smoothing: antialiased; -moz-osx-smoothing: grayscale;
+            overflow: hidden;
         }
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            background-color: var(--form-bg);
-            padding: 32px 40px;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-            transition: box-shadow 0.3s ease-in-out;
+        #background-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
         }
-        .container:hover {
-            box-shadow: 0 4px 12px rgba(60, 64, 67, 0.1);
-        }
-        header {
-            text-align: center;
-            padding-bottom: 24px;
-            margin-bottom: 32px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        header h1 {
-            font-size: 24px;
-            font-weight: 500;
-            margin: 0;
-            color: var(--grey-800);
-        }
-        .input-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-            margin-bottom: 24px;
-        }
-        .input-section {
-            display: flex;
-            flex-direction: column;
-        }
-        label {
-            font-weight: 500;
-            font-size: 14px;
-            margin-bottom: 8px;
-            color: var(--grey-800);
-        }
-        textarea, input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
-            background-color: #fff;
-            font-family: inherit;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        select {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%235f6368' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 12px;
-        }
-        textarea {
-            resize: vertical;
-            flex-grow: 1;
-        }
-        #pasteContainer {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-        textarea:focus, input:focus, select:focus {
-            outline: none;
-            border-color: var(--blue-600);
-            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-        }
-        #generateBtn {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--blue-600);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 16px;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        #generateBtn:hover {
-            background-color: var(--blue-700);
-            box-shadow: 0 1px 3px 1px rgba(60,64,67,0.15);
-        }
-        .results-wrapper {
-            margin-top: 40px;
-            display: none;
-            animation: fadeIn 0.5s ease-in-out;
-        }
-        .output-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-        }
-        .result-container { display: flex; flex-direction: column; }
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .result-header h2 { font-size: 18px; font-weight: 500; margin: 0; }
-        .copy-btn {
-            background-color: var(--grey-200);
-            color: var(--grey-800);
-            border: 1px solid transparent;
-            border-radius: 4px;
-            padding: 6px 12px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .copy-btn:hover { background-color: #E8EAED; }
-        pre {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 15px;
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-            font-size: 13px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            flex-grow: 1;
+        .main-container {
+            width: 100%; max-width: 1300px; height: calc(100vh - 5rem);
+            display: flex; flex-direction: column; gap: 1.5rem;
             overflow-y: auto;
-            min-height: 250px;
+            padding-right: 10px;
         }
-        footer {
-            margin-top: 40px;
-            padding-top: 24px;
-            border-top: 1px solid var(--border-color);
-            font-size: 13px;
-            color: #888;
-            text-align: center;
+        .main-container::-webkit-scrollbar { width: 8px; }
+        .main-container::-webkit-scrollbar-track { background: transparent; }
+        .main-container::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.2); border-radius: 4px; border: 2px solid transparent; background-clip: content-box;}
+
+        header { text-align: center; margin-bottom: 1rem; }
+        header h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; color: var(--text-primary); }
+        
+        .card {
+            background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem;
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-md); padding: 1.5rem; display: flex; flex-direction: column;
         }
-        .mode-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;}
+        h3.card-title { font-size: 1.125rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+        
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            font-weight: 600; font-size: 0.875rem; padding: 0.6rem 1rem; border-radius: 0.5rem;
+            border: 1px solid transparent; cursor: pointer; transition: all var(--transition-speed) ease; user-select: none;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .btn:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+        .btn.primary { background-color: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+        .btn.primary:hover { background-color: var(--accent-blue-hover); border-color: var(--accent-blue-hover); }
+        .btn.secondary { background: var(--bg-card-solid); color: var(--text-primary); border-color: #ced4da; }
+        .btn.secondary:hover { border-color: #adb5bd; background-color: #f8f9fa; }
+        .btn svg { width: 16px; height: 16px; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label, label { display: block; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        .form-group input, .form-group textarea, 
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%; padding: 0.75rem; border-radius: 0.5rem; background-color: var(--bg-main);
+            border: 1px solid #ced4da; color: var(--text-primary); font-family: var(--font-main);
+            font-size: 0.9rem; transition: all var(--transition-speed) ease;
+        }
+        .form-group textarea, textarea { font-family: var(--font-mono); min-height: 250px; resize: vertical; flex-grow: 1;}
+        .form-group input:focus, .form-group textarea:focus,
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus { 
+            border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2); outline: none; 
+        }
+
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-io { grid-template-columns: 1fr 1fr; }
+        
+        .toast-container { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 1rem; z-index: 2000; }
+        .toast { padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; font-weight: 600; box-shadow: var(--shadow-md); opacity: 0; transform: translateX(100%); animation: slideIn 0.5s forwards, slideOut 0.5s 4.5s forwards; }
+        .toast.success { background-color: var(--accent-green); }
+        .toast.warning { background-color: var(--accent-orange); }
+        @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideOut { to { opacity: 0; transform: translateX(100%); } }
+        
+        pre {
+            font-family: var(--font-mono); background: #f8f9fa; padding: 1rem; border-radius: 0.5rem;
+            border: 1px solid var(--border-color); white-space: pre-wrap; word-wrap: break-word;
+            min-height: 250px; font-size: 0.875rem; flex-grow: 1;
+        }
+        .mode-selector, .format-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.9rem; }
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--blue-600); }
+        input:checked + .slider { background-color: var(--accent-blue); }
         input:checked + .slider:before { transform: translateX(18px); }
-        .manual-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-        .full-width-section { grid-column: 1 / -1; }
-        .info-text {
-            font-weight: 400;
-            font-size: 13px;
-            color: #5f6368;
-            margin-left: 5px;
+        .label-with-action { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .save-option { display: flex; align-items: center; gap: 5px; }
+        .save-option label { margin-bottom: 0; font-weight: 400; font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+        .save-option input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        
+        /* Specific styles for manual input layout */
+        #manualContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive columns */
+            gap: 1rem; /* Space between grid items */
+            margin-top: 1rem;
         }
-        /* New Styles for Save Checkbox */
-        .label-with-action {
+        #manualContainer .form-group {
+            margin-bottom: 0; /* Remove default margin as grid gap handles spacing */
+        }
+        #manualContainer .form-group label {
+            margin-bottom: 0.5rem; /* Keep label margin */
+        }
+        #manualContainer .label-with-action {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
             width: 100%;
+            margin-bottom: 0.5rem; /* Ensure space below label/save option */
         }
-        .save-option {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .save-option label {
-            margin-bottom: 0; /* Override default label margin */
-            font-weight: 400;
-            font-size: 13px;
-            color: #5f6368;
-            cursor: pointer;
-        }
-        .save-option input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-        .format-selector {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 16px;
+        #manualContainer .save-option {
+            margin-top: 0; /* Adjust if needed, but flex takes care */
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 800px) {
-            .input-grid, .output-grid { grid-template-columns: 1fr; gap: 24px; }
-            .container { padding: 24px; }
+        @media (max-width: 900px) {
+            .grid-io { grid-template-columns: 1fr; }
+            #manualContainer {
+                grid-template-columns: 1fr; /* Stack on smaller screens */
+            }
         }
     </style>
 </head>
 <body>
-
-    <div class="container">
+    <canvas id="background-canvas"></canvas>
+    <div class="main-container">
         <header>
             <h1>VMTA Loop Generator</h1>
         </header>
 
-        <main>
-            <form id="generatorForm">
-                <div class="input-grid">
-                    <section class="input-section" id="vMtaInputSection">
-                        <div class="mode-selector">
-                           <label for="vMtaModeToggle">Paste Config</label>
-                            <label class="switch">
-                                <input type="checkbox" id="vMtaModeToggle">
-                                <span class="slider"></span>
-                            </label>
-                           <label for="vMtaModeToggle">Manual Input <span class="info-text">(IPs extracted from list)</span></label>
-                        </div>
-                        
-                        <div id="pasteContainer">
-                             <label for="vMtaText">Full Virtual-MTA Configuration:</label>
-                             <textarea id="vMtaText" placeholder="<virtual-mta ...>&#10; smtp-source-ip ...&#10; host-name ...&#10;</virtual-mta>"></textarea>
-                        </div>
+        <form id="generatorForm">
+            <div class="grid grid-io">
+                <div class="card" id="vMtaInputSection">
+                    <div class="mode-selector">
+                        <label for="vMtaModeToggle">Paste Config</label>
+                        <label class="switch">
+                            <input type="checkbox" id="vMtaModeToggle">
+                            <span class="slider"></span>
+                        </label>
+                        <label for="vMtaModeToggle">Manual Input</label>
+                    </div>
+                    
+                    <div id="pasteContainer" style="display: flex; flex-direction: column; flex-grow: 1;">
+                        <label for="vMtaText">Full Virtual-MTA Configuration:</label>
+                        <textarea id="vMtaText" placeholder="<virtual-mta ...>&#10; smtp-source-ip ...&#10; host-name ...&#10;</virtual-mta>"></textarea>
+                    </div>
 
-                        <div id="manualContainer" style="display: none;">
-                            <div class="manual-inputs-grid">
-                                <div>
-                                    <label for="ispInput">ISP:</label>
-                                    <select id="ispInput">
-                                        <option value="gmail">gmail</option>
-                                        <option value="icloud">icloud</option>
-                                        <option value="charter">charter</option>
-                                        <option value="juno">juno</option>
-                                        <option value="roadrunner">roadrunner</option>
-                                        <option value="frontier">frontier</option>
-                                        <option value="cox">cox</option>
-                                        <option value="optonline">optonline</option>
-                                        <option value="att">att</option>
-                                        <option value="verizon">verizon</option>
-                                        <option value="earthlink">earthlink</option>
-                                        <option value="comcast">comcast</option>
-                                        <option value="sbcglobal">sbcglobal</option>
-                                        <option value="bt">bt</option>
-                                        <option value="sky">sky</option>
-                                        <option value="talktalk">talktalk</option>
-                                        <option value="excite">excite</option>
-                                        <option value="windstream">windstream</option>
-                                        <option value="mail">mail</option>
-                                        <option value="giuk">giuk</option>
-                                        <option value="gius">gius</option>
-                                        <option value="gius2">gius2</option>
-                                        <option value="hotmail">hotmail</option>
-                                        <option value="yahoo">yahoo</option>
-                                        <option value="aol">aol</option>
-                                        <option value="cableone">cableone</option>
-                                        <option value="centurylink">centurylink</option>
-                                        <option value="virginmedia">virginmedia</option>
-                                        <option value="bellsouth">bellsouth</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <div class="label-with-action">
-                                        <label for="mailerIdInput">Mailer-ID:</label>
-                                        <div class="save-option">
-                                            <input type="checkbox" id="saveMailerIdCheck">
-                                            <label for="saveMailerIdCheck">Save</label>
-                                        </div>
-                                    </div>
-                                    <input type="text" id="mailerIdInput" placeholder="e.g., 931">
-                                </div>
-                                <div>
-                                    <label for="hostnameInput">Host-name:</label>
-                                    <input type="text" id="hostnameInput" placeholder="e.g., ulm.edu">
+                    <div id="manualContainer" style="display: none;">
+                        <div class="form-group">
+                            <label for="ispInput">ISP:</label>
+                            <select id="ispInput">
+                                <option value="gmail">gmail</option>
+                                <option value="icloud">icloud</option>
+                                <option value="charter">charter</option>
+                                <option value="juno">juno</option>
+                                <option value="roadrunner">roadrunner</option>
+                                <option value="frontier">frontier</option>
+                                <option value="cox">cox</option>
+                                <option value="optonline">optonline</option>
+                                <option value="att">att</option>
+                                <option value="verizon">verizon</option>
+                                <option value="earthlink">earthlink</option>
+                                <option value="comcast">comcast</option>
+                                <option value="sbcglobal">sbcglobal</option>
+                                <option value="bt">bt</option>
+                                <option value="sky">sky</option>
+                                <option value="talktalk">talktalk</option>
+                                <option value="excite">excite</option>
+                                <option value="windstream">windstream</option>
+                                <option value="mail">mail</option>
+                                <option value="giuk">giuk</option>
+                                <option value="gius">gius</option>
+                                <option value="gius2">gius2</option>
+                                <option value="hotmail">hotmail</option>
+                                <option value="yahoo">yahoo</option>
+                                <option value="aol">aol</option>
+                                <option value="cableone">cableone</option>
+                                <option value="centurylink">centurylink</option>
+                                <option value="virginmedia">virginmedia</option>
+                                <option value="bellsouth">bellsouth</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div class="label-with-action">
+                                <label for="mailerIdInput">Mailer-ID:</label>
+                                <div class="save-option">
+                                    <input type="checkbox" id="saveMailerIdCheck">
+                                    <label for="saveMailerIdCheck">Save</label>
                                 </div>
                             </div>
+                            <input type="text" id="mailerIdInput" placeholder="e.g., 931">
                         </div>
-                    </section>
-                    
-                    <section class="input-section" id="ipListSection">
-                        <label for="ipList">IP & Domain List:</label>
-                        <textarea id="ipList" placeholder="195.154.200.28,qdfnet.com,...&#10;212.129.0.117,step.qdfnet.com,..."></textarea>
-                    </section>
-                    
-                    <div class="full-width-section">
-                        <label for="loopCount">Number of Duplications:</label>
-                        <input type="number" id="loopCount" value="1" min="1" required>
-                        <div class="format-selector">
-                            <label for="sequentialModeToggle">Standard Format</label>
-                             <label class="switch">
-                                 <input type="checkbox" id="sequentialModeToggle">
-                                 <span class="slider"></span>
-                             </label>
-                            <label for="sequentialModeToggle">Sequential Format</label>
-                         </div>
+                        <div class="form-group">
+                            <label for="hostnameInput">Host-name:</label>
+                            <input type="text" id="hostnameInput" placeholder="e.g., ulm.edu">
+                        </div>
                     </div>
                 </div>
-
-                <button type="submit" id="generateBtn">Generate</button>
-            </form>
-
-            <div class="results-wrapper" id="resultsWrapper">
-                <div class="output-grid">
-                    <div class="result-container" id="vMtaResultContainer">
-                         <div class="result-header">
-                            <h2>Virtual-MTA Output</h2>
-                            <button class="copy-btn" data-target="vMtaResultText">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3z"/></svg>
-                                <span>Copy</span>
-                            </button>
-                        </div>
-                        <pre id="vMtaResultText"></pre>
-                    </div>
-
-                    <div class="result-container" id="ipListResultContainer">
-                         <div class="result-header">
-                            <h2>IP & Domain List Output</h2>
-                            <button class="copy-btn" data-target="ipListResultText">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3z"/></svg>
-                                <span>Copy</span>
-                            </button>
-                        </div>
-                        <pre id="ipListResultText"></pre>
-                    </div>
+                
+                <div class="card" id="ipListSection" style="display: flex; flex-direction: column;">
+                    <label for="ipList">IP & Domain List:</label>
+                    <textarea id="ipList" placeholder="195.154.200.28,qdfnet.com,...&#10;212.129.0.117,step.qdfnet.com,..."></textarea>
                 </div>
             </div>
-        </main>
+
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label for="loopCount">Number of Duplications:</label>
+                    <input type="number" id="loopCount" value="1" min="1" required style="max-width: 200px;">
+                </div>
+                
+                <div class="format-selector">
+                    <label for="sequentialModeToggle">Standard Format</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sequentialModeToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <label for="sequentialModeToggle">Sequential Format</label>
+                </div>
+                
+                <button type="submit" id="generateBtn" class="btn primary" style="margin-top: 1.5rem;">Generate</button>
+            </div>
+        </form>
+
+        <div id="resultsWrapper" style="display: none;">
+            <div class="grid grid-io">
+                <div class="card" id="vMtaResultContainer" style="display: none;">
+                    <div class="card-header">
+                        <h3 class="card-title">Virtual-MTA Output</h3>
+                        <button type="button" class="btn secondary copy-btn" data-target="vMtaResultText">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V16.5a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 017 16.5v-13z" /><path d="M5 6.5A1.5 1.5 0 016.5 5h3A.5.5 0 0010 4.5H6.5A2.5 2.5 0 004 7v10.5A2.5 2.5 0 006.5 20h7a2.5 2.5 0 002.5-2.5V16a.5.5 0 00-1 0v1.5a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 015 17.5V6.5z" /></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <pre id="vMtaResultText"></pre>
+                </div>
+
+                <div class="card" id="ipListResultContainer" style="display: none;">
+                    <div class="card-header">
+                        <h3 class="card-title">IP & Domain List Output</h3>
+                        <button type="button" class="btn secondary copy-btn" data-target="ipListResultText">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V16.5a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 017 16.5v-13z" /><path d="M5 6.5A1.5 1.5 0 016.5 5h3A.5.5 0 0010 4.5H6.5A2.5 2.5 0 004 7v10.5A2.5 2.5 0 006.5 20h7a2.5 2.5 0 002.5-2.5V16a.5.5 0 00-1 0v1.5a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 015 17.5V6.5z" /></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <pre id="ipListResultText"></pre>
+                </div>
+            </div>
+        </div>
     </div>
     
-    <footer>
-        <p>© 2025 VMTA Loop Generator</p>
-    </footer>
+    <div id="toast-container" class="toast-container"></div>
 
     <script>
+        // --- UNIFIED CANVAS BACKGROUND ANIMATION ---
+        const canvas = document.getElementById('background-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = 'rgba(108, 117, 125, 0.5)';
+            }
+            update() {
+                if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+                if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+                this.x += this.speedX;
+                this.y += this.speedY;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            let numberOfParticles = (canvas.height * canvas.width) / 12000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function connectParticles() {
+            let opacityValue = 1;
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    let distance = Math.sqrt(Math.pow(particles[a].x - particles[b].x, 2) + Math.pow(particles[a].y - particles[b].y, 2));
+                    if (distance < 120) {
+                        opacityValue = 1 - (distance / 120);
+                        ctx.strokeStyle = `rgba(108, 117, 125, ${opacityValue})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            connectParticles();
+            requestAnimationFrame(animate);
+        }
+
+        // --- ORIGINAL VMTA-DUPLICATE JS ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+            resizeCanvas();
+            initParticles();
+            animate();
+            
             const form = document.getElementById('generatorForm');
             const loopCountElem = document.getElementById('loopCount');
             const resultsWrapper = document.getElementById('resultsWrapper');
-
             const vMtaModeToggle = document.getElementById('vMtaModeToggle');
             const pasteContainer = document.getElementById('pasteContainer');
             const manualContainer = document.getElementById('manualContainer');
-            
             const vMtaTextElem = document.getElementById('vMtaText');
             const ipListElem = document.getElementById('ipList');
             const ispInputElem = document.getElementById('ispInput');
@@ -377,19 +377,15 @@
             const hostnameInputElem = document.getElementById('hostnameInput');
             const saveMailerIdCheck = document.getElementById('saveMailerIdCheck');
             const sequentialModeToggle = document.getElementById('sequentialModeToggle');
-
             const vMtaResultContainer = document.getElementById('vMtaResultContainer');
             const ipListResultContainer = document.getElementById('ipListResultContainer');
             const vMtaResultTextElem = document.getElementById('vMtaResultText');
             const ipListResultTextElem = document.getElementById('ipListResultText');
-            
-            // --- Local Storage Logic ---
             const savedMailerId = localStorage.getItem('savedMailerId');
             if (savedMailerId) {
                 mailerIdInputElem.value = savedMailerId;
                 saveMailerIdCheck.checked = true;
             }
-
             function handleSavePreference() {
                 if (saveMailerIdCheck.checked) {
                     localStorage.setItem('savedMailerId', mailerIdInputElem.value);
@@ -397,33 +393,26 @@
                     localStorage.removeItem('savedMailerId');
                 }
             }
-
             saveMailerIdCheck.addEventListener('change', handleSavePreference);
             mailerIdInputElem.addEventListener('input', () => {
                 if (saveMailerIdCheck.checked) {
                     localStorage.setItem('savedMailerId', mailerIdInputElem.value);
                 }
             });
-
-            // --- Toggle Logic ---
             vMtaModeToggle.addEventListener('change', () => {
                 if (vMtaModeToggle.checked) {
                     pasteContainer.style.display = 'none';
-                    manualContainer.style.display = 'block';
+                    manualContainer.style.display = 'grid'; // Changed to grid
                 } else {
-                    pasteContainer.style.display = 'block';
+                    pasteContainer.style.display = 'flex';
                     manualContainer.style.display = 'none';
                 }
             });
-
-            // --- Form Submission Logic ---
             form.addEventListener('submit', (event) => {
                 event.preventDefault();
-
                 const loops = parseInt(loopCountElem.value, 10);
                 const ipListText = ipListElem.value.trim();
                 let vMtaBaseText = '';
-                
                 if (vMtaModeToggle.checked) {
                     const isp = ispInputElem.value.trim();
                     const mailerId = mailerIdInputElem.value.trim();
@@ -431,30 +420,25 @@
                     const ips = ipListElem.value.trim().split('\n')
                         .filter(line => line.trim() !== '')
                         .map(line => line.split(',')[0].trim());
-
                     if (!ips.length || !isp || !mailerId || !hostname) {
-                        alert("Please fill all manual input fields and ensure the IP & Domain List is populated.");
+                        showToast("Please fill all manual fields and IP & Domain List.", 'warning');
                         return;
                     }
-
                     vMtaBaseText = ips.map(ip => 
                         `<virtual-mta ${ip}-${isp}-${mailerId}>\n smtp-source-ip ${ip}\n host-name ${hostname}\n</virtual-mta>`
                     ).join('\n');
                 } else {
                     vMtaBaseText = vMtaTextElem.value.trim();
                 }
-
                 if ((!vMtaBaseText && !ipListText) || loops < 1) {
-                    alert("Please provide text in at least one input area and a valid number of duplications.");
+                    showToast("Please provide input and a valid number of duplications.", 'warning');
                     return;
                 }
-
                 let vMtaOutput = '';
                 let ipListOutput = '';
                 const vMtaRegex = /<virtual-mta\s+([\w\.\-]+)>/g;
                 let vMtaSequentialCounter = 1;
                 let ipSequentialCounter = 1;
-
                 for (let i = 1; i <= loops; i++) {
                     if (vMtaBaseText) {
                         if (sequentialModeToggle.checked) {
@@ -470,7 +454,6 @@
                         }
                     }
                 }
-                
                 if (ipListText) {
                     const lines = ipListText.split('\n').filter(line => line.trim() !== '');
                     let allModifiedLines = [];
@@ -492,7 +475,6 @@
                         ipListOutput = allModifiedLines.join('\n\n');
                     }
                 }
-                
                 let hasOutput = false;
                 if (vMtaOutput) {
                     vMtaResultTextElem.textContent = vMtaOutput;
@@ -512,8 +494,6 @@
                     resultsWrapper.style.display = 'block';
                 }
             });
-
-            // --- Copy Button Logic ---
             document.querySelectorAll('.copy-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const currentButton = e.currentTarget;
@@ -522,7 +502,7 @@
                     
                     navigator.clipboard.writeText(targetElement.textContent).then(() => {
                         const originalContent = currentButton.innerHTML;
-                        currentButton.innerHTML = 'Copied! ✅';
+                        currentButton.innerHTML = '<span>Copied!</span>';
                         setTimeout(() => { currentButton.innerHTML = originalContent; }, 2000);
                     }).catch(err => {
                         console.error('Failed to copy text: ', err);
