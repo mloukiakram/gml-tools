@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VMTA Loop Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Gmail-inspired Modern UI - Polished */
+        :root {
+            --blue-600: #1A73E8;
+            --blue-700: #1967D2;
+            --grey-100: #F8F9FA;
+            --grey-200: #F1F3F4;
+            --grey-300: #DADCE0;
+            --grey-800: #3c4043;
+            --grey-900: #202124;
+            --form-bg: #ffffff;
+            --text-color: var(--grey-900);
+            --border-color: var(--grey-300);
+            --border-radius: 8px;
+        }
+        body {
+            font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 24px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background-color: var(--form-bg);
+            padding: 32px 40px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+        .container:hover {
+            box-shadow: 0 4px 12px rgba(60, 64, 67, 0.1);
+        }
+        header {
+            text-align: center;
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        header h1 {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0;
+            color: var(--grey-800);
+        }
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+        .input-section {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: var(--grey-800);
+        }
+        textarea, input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background-color: #fff;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%235f6368' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px;
+        }
+        textarea {
+            resize: vertical;
+            flex-grow: 1;
+        }
+        #pasteContainer {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: var(--blue-600);
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+        #generateBtn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--blue-600);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        #generateBtn:hover {
+            background-color: var(--blue-700);
+            box-shadow: 0 1px 3px 1px rgba(60,64,67,0.15);
+        }
+        .results-wrapper {
+            margin-top: 40px;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .output-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+        .result-container { display: flex; flex-direction: column; }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .result-header h2 { font-size: 18px; font-weight: 500; margin: 0; }
+        .copy-btn {
+            background-color: var(--grey-200);
+            color: var(--grey-800);
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .copy-btn:hover { background-color: #E8EAED; }
+        pre {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            flex-grow: 1;
+            overflow-y: auto;
+            min-height: 250px;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+            font-size: 13px;
+            color: #888;
+            text-align: center;
+        }
+        .mode-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--blue-600); }
+        input:checked + .slider:before { transform: translateX(18px); }
+        .manual-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        .full-width-section { grid-column: 1 / -1; }
+        .info-text {
+            font-weight: 400;
+            font-size: 13px;
+            color: #5f6368;
+            margin-left: 5px;
+        }
+        /* New Styles for Save Checkbox */
+        .label-with-action {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .save-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .save-option label {
+            margin-bottom: 0; /* Override default label margin */
+            font-weight: 400;
+            font-size: 13px;
+            color: #5f6368;
+            cursor: pointer;
+        }
+        .save-option input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .format-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 800px) {
+            .input-grid, .output-grid { grid-template-columns: 1fr; gap: 24px; }
+            .container { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>VMTA Loop Generator</h1>
+        </header>
+
+        <main>
+            <form id="generatorForm">
+                <div class="input-grid">
+                    <section class="input-section" id="vMtaInputSection">
+                        <div class="mode-selector">
+                           <label for="vMtaModeToggle">Paste Config</label>
+                            <label class="switch">
+                                <input type="checkbox" id="vMtaModeToggle">
+                                <span class="slider"></span>
+                            </label>
+                           <label for="vMtaModeToggle">Manual Input <span class="info-text">(IPs extracted from list)</span></label>
+                        </div>
+                        
+                        <div id="pasteContainer">
+                             <label for="vMtaText">Full Virtual-MTA Configuration:</label>
+                             <textarea id="vMtaText" placeholder="<virtual-mta ...>&#10; smtp-source-ip ...&#10; host-name ...&#10;</virtual-mta>"></textarea>
+                        </div>
+
+                        <div id="manualContainer" style="display: none;">
+                            <div class="manual-inputs-grid">
+                                <div>
+                                    <label for="ispInput">ISP:</label>
+                                    <select id="ispInput">
+                                        <option value="gmail">gmail</option>
+                                        <option value="icloud">icloud</option>
+                                        <option value="charter">charter</option>
+                                        <option value="juno">juno</option>
+                                        <option value="roadrunner">roadrunner</option>
+                                        <option value="frontier">frontier</option>
+                                        <option value="cox">cox</option>
+                                        <option value="optonline">optonline</option>
+                                        <option value="att">att</option>
+                                        <option value="verizon">verizon</option>
+                                        <option value="earthlink">earthlink</option>
+                                        <option value="comcast">comcast</option>
+                                        <option value="sbcglobal">sbcglobal</option>
+                                        <option value="bt">bt</option>
+                                        <option value="sky">sky</option>
+                                        <option value="talktalk">talktalk</option>
+                                        <option value="excite">excite</option>
+                                        <option value="windstream">windstream</option>
+                                        <option value="mail">mail</option>
+                                        <option value="giuk">giuk</option>
+                                        <option value="gius">gius</option>
+                                        <option value="gius2">gius2</option>
+                                        <option value="hotmail">hotmail</option>
+                                        <option value="yahoo">yahoo</option>
+                                        <option value="aol">aol</option>
+                                        <option value="cableone">cableone</option>
+                                        <option value="centurylink">centurylink</option>
+                                        <option value="virginmedia">virginmedia</option>
+                                        <option value="bellsouth">bellsouth</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <div class="label-with-action">
+                                        <label for="mailerIdInput">Mailer-ID:</label>
+                                        <div class="save-option">
+                                            <input type="checkbox" id="saveMailerIdCheck">
+                                            <label for="saveMailerIdCheck">Save</label>
+                                        </div>
+                                    </div>
+                                    <input type="text" id="mailerIdInput" placeholder="e.g., 931">
+                                </div>
+                                <div>
+                                    <label for="hostnameInput">Host-name:</label>
+                                    <input type="text" id="hostnameInput" placeholder="e.g., ulm.edu">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="input-section" id="ipListSection">
+                        <label for="ipList">IP & Domain List:</label>
+                        <textarea id="ipList" placeholder="195.154.200.28,qdfnet.com,...&#10;212.129.0.117,step.qdfnet.com,..."></textarea>
+                    </section>
+                    
+                    <div class="full-width-section">
+                        <label for="loopCount">Number of Duplications:</label>
+                        <input type="number" id="loopCount" value="1" min="1" required>
+                        <div class="format-selector">
+                            <label for="sequentialModeToggle">Standard Format</label>
+                             <label class="switch">
+                                 <input type="checkbox" id="sequentialModeToggle">
+                                 <span class="slider"></span>
+                             </label>
+                            <label for="sequentialModeToggle">Sequential Format</label>
+                         </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="generateBtn">Generate</button>
+            </form>
+
+            <div class="results-wrapper" id="resultsWrapper">
+                <div class="output-grid">
+                    <div class="result-container" id="vMtaResultContainer">
+                         <div class="result-header">
+                            <h2>Virtual-MTA Output</h2>
+                            <button class="copy-btn" data-target="vMtaResultText">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3z"/></svg>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                        <pre id="vMtaResultText"></pre>
+                    </div>
+
+                    <div class="result-container" id="ipListResultContainer">
+                         <div class="result-header">
+                            <h2>IP & Domain List Output</h2>
+                            <button class="copy-btn" data-target="ipListResultText">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3z"/></svg>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                        <pre id="ipListResultText"></pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <footer>
+        <p>© 2025 VMTA Loop Generator</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('generatorForm');
+            const loopCountElem = document.getElementById('loopCount');
+            const resultsWrapper = document.getElementById('resultsWrapper');
+
+            const vMtaModeToggle = document.getElementById('vMtaModeToggle');
+            const pasteContainer = document.getElementById('pasteContainer');
+            const manualContainer = document.getElementById('manualContainer');
+            
+            const vMtaTextElem = document.getElementById('vMtaText');
+            const ipListElem = document.getElementById('ipList');
+            const ispInputElem = document.getElementById('ispInput');
+            const mailerIdInputElem = document.getElementById('mailerIdInput');
+            const hostnameInputElem = document.getElementById('hostnameInput');
+            const saveMailerIdCheck = document.getElementById('saveMailerIdCheck');
+            const sequentialModeToggle = document.getElementById('sequentialModeToggle');
+
+            const vMtaResultContainer = document.getElementById('vMtaResultContainer');
+            const ipListResultContainer = document.getElementById('ipListResultContainer');
+            const vMtaResultTextElem = document.getElementById('vMtaResultText');
+            const ipListResultTextElem = document.getElementById('ipListResultText');
+            
+            // --- Local Storage Logic ---
+            const savedMailerId = localStorage.getItem('savedMailerId');
+            if (savedMailerId) {
+                mailerIdInputElem.value = savedMailerId;
+                saveMailerIdCheck.checked = true;
+            }
+
+            function handleSavePreference() {
+                if (saveMailerIdCheck.checked) {
+                    localStorage.setItem('savedMailerId', mailerIdInputElem.value);
+                } else {
+                    localStorage.removeItem('savedMailerId');
+                }
+            }
+
+            saveMailerIdCheck.addEventListener('change', handleSavePreference);
+            mailerIdInputElem.addEventListener('input', () => {
+                if (saveMailerIdCheck.checked) {
+                    localStorage.setItem('savedMailerId', mailerIdInputElem.value);
+                }
+            });
+
+            // --- Toggle Logic ---
+            vMtaModeToggle.addEventListener('change', () => {
+                if (vMtaModeToggle.checked) {
+                    pasteContainer.style.display = 'none';
+                    manualContainer.style.display = 'block';
+                } else {
+                    pasteContainer.style.display = 'block';
+                    manualContainer.style.display = 'none';
+                }
+            });
+
+            // --- Form Submission Logic ---
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+
+                const loops = parseInt(loopCountElem.value, 10);
+                const ipListText = ipListElem.value.trim();
+                let vMtaBaseText = '';
+                
+                if (vMtaModeToggle.checked) {
+                    const isp = ispInputElem.value.trim();
+                    const mailerId = mailerIdInputElem.value.trim();
+                    const hostname = hostnameInputElem.value.trim();
+                    const ips = ipListElem.value.trim().split('\n')
+                        .filter(line => line.trim() !== '')
+                        .map(line => line.split(',')[0].trim());
+
+                    if (!ips.length || !isp || !mailerId || !hostname) {
+                        alert("Please fill all manual input fields and ensure the IP & Domain List is populated.");
+                        return;
+                    }
+
+                    vMtaBaseText = ips.map(ip => 
+                        `<virtual-mta ${ip}-${isp}-${mailerId}>\n smtp-source-ip ${ip}\n host-name ${hostname}\n</virtual-mta>`
+                    ).join('\n');
+                } else {
+                    vMtaBaseText = vMtaTextElem.value.trim();
+                }
+
+                if ((!vMtaBaseText && !ipListText) || loops < 1) {
+                    alert("Please provide text in at least one input area and a valid number of duplications.");
+                    return;
+                }
+
+                let vMtaOutput = '';
+                let ipListOutput = '';
+                const vMtaRegex = /<virtual-mta\s+([\w\.\-]+)>/g;
+                let vMtaSequentialCounter = 1;
+                let ipSequentialCounter = 1;
+
+                for (let i = 1; i <= loops; i++) {
+                    if (vMtaBaseText) {
+                        if (sequentialModeToggle.checked) {
+                            const modifiedText = vMtaBaseText.replaceAll(vMtaRegex, (match, p1) => {
+                                const newVmtaname = `<virtual-mta ${p1}-${vMtaSequentialCounter}>`;
+                                vMtaSequentialCounter++;
+                                return newVmtaname;
+                            });
+                             vMtaOutput += modifiedText + (i < loops ? '\n\n' : '');
+                        } else {
+                            const modifiedText = vMtaBaseText.replaceAll(vMtaRegex, `<virtual-mta $1-${i}>`);
+                            vMtaOutput += modifiedText + (i < loops ? '\n\n' : '');
+                        }
+                    }
+                }
+                
+                if (ipListText) {
+                    const lines = ipListText.split('\n').filter(line => line.trim() !== '');
+                    let allModifiedLines = [];
+                    if (sequentialModeToggle.checked) {
+                         for (let i = 1; i <= loops; i++) {
+                            const modifiedLines = lines.map(line => {
+                                const modifiedLine = `${line.trim()},${ispInputElem.value}-${ipSequentialCounter}`;
+                                ipSequentialCounter++;
+                                return modifiedLine;
+                            });
+                            allModifiedLines.push(...modifiedLines);
+                        }
+                        ipListOutput = allModifiedLines.join('\n');
+                    } else {
+                        for (let i = 1; i <= loops; i++) {
+                            const modifiedLines = lines.map(line => `${line.trim()},${ispInputElem.value}-${i}`);
+                             allModifiedLines.push(modifiedLines.join('\n'));
+                        }
+                        ipListOutput = allModifiedLines.join('\n\n');
+                    }
+                }
+                
+                let hasOutput = false;
+                if (vMtaOutput) {
+                    vMtaResultTextElem.textContent = vMtaOutput;
+                    vMtaResultContainer.style.display = 'flex';
+                    hasOutput = true;
+                } else {
+                    vMtaResultContainer.style.display = 'none';
+                }
+                if (ipListOutput) {
+                    ipListResultTextElem.textContent = ipListOutput;
+                    ipListResultContainer.style.display = 'flex';
+                    hasOutput = true;
+                } else {
+                    ipListResultContainer.style.display = 'none';
+                }
+                if(hasOutput) {
+                    resultsWrapper.style.display = 'block';
+                }
+            });
+
+            // --- Copy Button Logic ---
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const currentButton = e.currentTarget;
+                    const targetId = currentButton.dataset.target;
+                    const targetElement = document.getElementById(targetId);
+                    
+                    navigator.clipboard.writeText(targetElement.textContent).then(() => {
+                        const originalContent = currentButton.innerHTML;
+                        currentButton.innerHTML = 'Copied! ✅';
+                        setTimeout(() => { currentButton.innerHTML = originalContent; }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

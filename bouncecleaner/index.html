@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Domain Cleaner V10.1 — Bug Fix</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* --- Enhanced Design System --- */
+    :root {
+      --bg-color: #f7f9fc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-color: #1a202c;
+      --muted-text: #718096;
+      --primary-blue: #2563eb;
+      --primary-blue-hover: #1d4ed8;
+      --secondary-gray: #f1f5f9;
+      --secondary-gray-hover: #e2e8f0;
+      --success-green: #16a34a;
+      --error-red: #dc2626;
+      --error-red-hover: #b91c1c;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    }
+
+    /* --- General Styles --- */
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    
+    .header {
+      background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+      padding: 3rem 1.5rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    h1 { font-size: 2.5rem; margin: 0 0 0.5rem 0; font-weight: 700; letter-spacing: -0.025em; }
+    p.lead { margin: 0 auto; color: var(--muted-text); font-size: 1.125rem; max-width: 700px; }
+    
+    .wrap { max-width: 1200px; width: 100%; margin: 0 auto; padding: 2rem 1.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; }
+    
+    .card { 
+      background: var(--card-bg); 
+      padding: 1.5rem; 
+      border-radius: 0.75rem; 
+      border: 1px solid var(--border-color); 
+      box-shadow: var(--shadow-md); 
+      display: flex; 
+      flex-direction: column; 
+    }
+    label { display: block; font-size: 0.875rem; margin-bottom: 0.5rem; color: var(--text-color); font-weight: 500; }
+    textarea, input[type="text"], select { 
+      width: 100%; 
+      border: 1px solid var(--border-color); 
+      padding: 0.75rem; 
+      border-radius: 0.5rem; 
+      font-family: inherit; 
+      font-size: 0.9rem; 
+      outline: none; 
+      transition: border-color 0.2s, box-shadow 0.2s; 
+      background-color: var(--card-bg);
+    }
+    textarea { min-height: 180px; resize: vertical; flex-grow: 1; }
+    textarea:focus, input:focus, select:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+    
+    .controls { display: flex; gap: 0.75rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--primary-blue); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; user-select: none; }
+    .btn:hover { background: var(--primary-blue-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn:active { transform: translateY(0px) scale(0.98); }
+    .btn.secondary { background: var(--secondary-gray); color: var(--text-color); border: 1px solid var(--border-color); }
+    .btn.secondary:hover { background: var(--secondary-gray-hover); }
+    .btn.danger { background: var(--error-red); }
+    .btn.danger:hover { background: var(--error-red-hover); }
+    .btn.small { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
+    .btn:disabled { background: var(--secondary-gray); color: var(--muted-text); cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .meta { font-size: 0.8rem; color: var(--muted-text); margin-top: 1rem; }
+    .stats { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+    .stat { background: var(--secondary-gray); padding: 0.5rem 0.75rem; border-radius: 99px; font-size: 0.8rem; color: var(--text-color); border: 1px solid var(--border-color); }
+    .stat[data-type] { cursor: pointer; transition: background-color 0.2s; }
+    .stat[data-type]:hover { background-color: var(--secondary-gray-hover); }
+    
+    #log { font-size: 0.875rem; color: var(--muted-text); line-height: 1.45; min-height: 100px; background: var(--secondary-gray); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); flex-grow: 1; overflow-y: auto; }
+    
+    /* --- Server Table Styles --- */
+    .server-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .server-table tr { border-bottom: 1px solid var(--border-color); }
+    .server-table th, .server-table td { padding: 1rem; text-align: left; vertical-align: middle; }
+    .server-table th { font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--muted-text); letter-spacing: 0.05em; }
+    .server-table th.sortable { cursor: pointer; }
+    .server-table th.sortable:hover { color: var(--text-color); }
+    .sort-indicator { display: inline-block; width: 1em; margin-left: 0.5em; color: var(--primary-blue); }
+    .server-table th.actions-header { text-align: right; }
+    .server-table td { font-size: 0.9rem; }
+    .server-table tr:last-child { border-bottom: none; }
+    .server-table tr.loaded { background-color: #eff6ff; font-weight: 500; }
+    .server-table tr.loaded td:first-child { border-left: 3px solid var(--primary-blue); }
+    .server-table tr.selected { background-color: #fefce8; } /* Yellowish tint for selected */
+    .server-table .actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .no-servers-message { text-align: center; color: var(--muted-text); padding: 2rem; }
+    .btn svg { width: 14px; height: 14px; }
+    .checkbox-cell { width: 1%; padding-right: 0; } /* For selection checkbox */
+    
+    /* --- Pagination Styles --- */
+    .pagination-controls { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 1rem; }
+    .pagination-info { font-size: 0.9rem; color: var(--muted-text); }
+    .pagination-buttons { display: flex; gap: 0.5rem; align-items: center; }
+    #items-per-page-select { width: auto; padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+
+    /* --- Modal Styles --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 20, 0.6); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+    #notificationModalOverlay { z-index: 10001; }
+    .modal-overlay.show { opacity: 1; visibility: visible; }
+    .modal { background: var(--card-bg); padding: 2rem; border-radius: 0.75rem; max-width: 95%; box-shadow: var(--shadow-lg); animation: modal-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; display: flex; flex-direction: column; max-height: 90%; }
+    .modal h3 { margin-top: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-color); text-align: center; }
+    .modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; }
+    @keyframes modal-in { 0% { transform: translateY(20px) scale(0.98); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+    .notification-modal { max-width: 400px; }
+    .results-modal { max-width: 900px; }
+    .server-modal { max-width: 800px; }
+    .results-modal-content { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; overflow: hidden; flex-grow: 1; }
+
+    /* --- Advanced Options Styles --- */
+    .advanced-options { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+    .advanced-options label { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; font-size: 0.9rem; cursor: pointer; }
+
+    /* --- Responsive --- */
+    @media (max-width: 820px) {
+      .wrap { padding: 1rem; }
+      h1 { font-size: 2rem; }
+      .grid { grid-template-columns: 1fr; }
+      .results-modal-content { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>Bounce Domain Cleaner</h1>
+    <p class="lead">A tool to manage your servers and keep your domain lists bounce free.</p>
+  </header>
+  
+  <main class="wrap">
+      <!-- Server Management Table -->
+      <div class="card" style="margin-bottom: 1.5rem; min-height: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+            <h2 style="margin:0; font-size: 1.25rem;">Your Servers</h2>
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="delete-selected-btn" class="btn danger small" style="display: none;">Delete Selected</button>
+                <button id="import-btn" class="btn secondary small">Import</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+                <button id="export-btn" class="btn secondary small">Export</button>
+                <button id="add-server-btn" class="btn small">Add Server</button>
+            </div>
+        </div>
+        <input type="text" id="search-bar" placeholder="Search servers by name or IP..." style="margin-top: 1rem;">
+        <div class="server-table-wrapper">
+            <table class="server-table">
+                <thead id="server-table-head">
+                    <tr>
+                        <th class="checkbox-cell"><input type="checkbox" id="select-all-servers" title="Select all on this page"></th>
+                        <th class="sortable" data-sort="name">Server Name (Envoi) <span class="sort-indicator"></span></th>
+                        <th>IPs</th>
+                        <th class="sortable" data-sort="domains">Domains <span class="sort-indicator"></span></th>
+                        <th class="actions-header">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="server-table-body"></tbody>
+            </table>
+        </div>
+        <div class="pagination-controls" id="pagination-controls">
+            <span class="pagination-info" id="pagination-info"></span>
+            <div class="pagination-buttons">
+                <select id="items-per-page-select">
+                    <option value="5">5 per page</option>
+                    <option value="10">10 per page</option>
+                    <option value="25">25 per page</option>
+                    <option value="all">All</option>
+                </select>
+                <button id="prev-page-btn" class="btn secondary small">Previous</button>
+                <button id="next-page-btn" class="btn secondary small">Next</button>
+            </div>
+        </div>
+      </div>
+      
+      <div class="grid">
+        <div class="card">
+          <label for="domains">File Domain List</label>
+          <textarea id="domains" placeholder="Load a server or paste domains here."></textarea>
+          <div class="controls">
+            <button id="copyDomains" class="btn secondary small">Copy</button>
+            <button id="clearDomains" class="btn secondary small">Clear</button>
+          </div>
+          <div class="meta">Changes will be saved to the loaded server upon processing.</div>
+        </div>
+
+        <div class="card">
+          <label for="remove">Bounced Domains</label>
+          <textarea id="remove" placeholder="return@bounced.com&#10;another-bounced.com"></textarea>
+          <div class="controls">
+            <button id="process" class="btn">Remove Bounced & Save</button>
+            <button id="preview" class="btn secondary small">Preview</button>
+            <button id="clearRemove" class="btn secondary small">Clear</button>
+          </div>
+          <div class="advanced-options">
+            <label><input type="checkbox" id="deduplicate-master">Deduplicate master list</label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card" style="margin-top:1.5rem; min-height:auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label style="margin:0;">Logs & Stats</label>
+                <button id="view-history-btn" class="btn secondary small">View Bounce History</button>
+            </div>
+            <div id="log" aria-live="polite" style="margin-top:1rem;">Ready.</div>
+            <div class="stats" id="stats"></div>
+      </div>
+  </main>
+
+  <!-- MODALS -->
+  <div class="modal-overlay" id="notificationModalOverlay"><div class="modal notification-modal"><h3 id="modalTitle"></h3><p id="modalMessage"></p></div></div>
+  <div class="modal-overlay" id="resultsModalOverlay"><div class="modal results-modal"><h3>Cleaning Complete!</h3><div class="results-modal-content"><div class="card" style="box-shadow:none;"><label>Kept Domains <span id="kept-count"></span></label><textarea id="results-kept-modal" readonly></textarea><div class="controls"><button id="copyKept" class="btn small">Copy</button><button id="downloadKept" class="btn secondary small">Download</button></div></div><div class="card" style="box-shadow:none;"><label>Removed Domains <span id="removed-count"></span></label><textarea id="results-removed-modal" readonly></textarea><div class="controls"><button id="copyRemoved" class="btn small">Copy</button><button id="downloadRemoved" class="btn secondary small">Download</button></div></div></div><div class="modal-footer"><button id="resultsModalClose" class="btn secondary">Close</button></div></div></div>
+  <div class="modal-overlay" id="previewModalOverlay"><div class="modal" style="max-width:600px;"><h3 id="preview-modal-title">Preview Extracted Domains</h3><p id="preview-modal-subtitle">Unique domains from the 'Bounced' list.</p><textarea id="preview-domains-modal" readonly style="min-height:200px;margin-top:1rem;"></textarea><div class="modal-footer"><button id="copyPreview" class="btn small">Copy</button><button id="previewModalClose" class="btn secondary">Close</button></div></div></div>
+  <div class="modal-overlay" id="serverModalOverlay"><div class="modal server-modal"><h3 id="server-modal-title">Add New Server</h3><form id="server-form" style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem;"><input type="hidden" id="server-id-input"><div><label for="server-name-input">Server Name (Envoi)</label><input type="text" id="server-name-input" placeholder="e.g., sl2147" required></div><div class="grid"><div><label for="server-ips-input">IPs (one per line)</label><textarea id="server-ips-input" placeholder="192.168.1.1" style="min-height:150px;"></textarea></div><div><label for="server-domains-input">Master Domain List</label><textarea id="server-domains-input" placeholder="domain1.com (Optional)" style="min-height:150px;"></textarea></div></div><div class="modal-footer"><button type="button" id="serverModalClose" class="btn secondary">Cancel</button><button type="submit" class="btn">Save Server</button></div></form></div></div>
+  <div class="modal-overlay" id="deleteModalOverlay"><div class="modal notification-modal"><h3>Confirm Deletion</h3><p id="delete-modal-message"></p><div class="modal-footer"><button id="deleteModalCancel" class="btn secondary">Cancel</button><button id="deleteModalConfirm" class="btn danger">Yes, Delete</button></div></div></div>
+  <div class="modal-overlay" id="historyModalOverlay"><div class="modal" style="max-width:600px;"><h3>Global Bounce History</h3><p>This is a list of every domain that has ever been removed.</p><textarea id="history-domains-modal" readonly style="min-height:200px;margin-top:1rem;"></textarea><div class="modal-footer"><button id="clearHistoryBtn" class="btn danger small">Clear History</button><button id="copyHistoryBtn" class="btn small">Copy</button><button id="historyModalClose" class="btn secondary">Close</button></div></div></div>
+
+  <script>
+    const el = id => document.getElementById(id);
+
+    // --- DOM Elements & State ---
+    const domainsBox = el('domains'), removeBox = el('remove'), log = el('log'), stats = el('stats');
+    const processBtn = el('process'), addServerBtn = el('add-server-btn'), viewHistoryBtn = el('view-history-btn');
+    const serverTableHead = el('server-table-head'), serverTableBody = el('server-table-body'), serverForm = el('server-form');
+    const searchBar = el('search-bar'), importBtn = el('import-btn'), exportBtn = el('export-btn'), importFile = el('import-file');
+    const deduplicateMasterCheckbox = el('deduplicate-master');
+    const paginationControls = el('pagination-controls'), paginationInfo = el('pagination-info'), prevPageBtn = el('prev-page-btn'), nextPageBtn = el('next-page-btn');
+    const itemsPerPageSelect = el('items-per-page-select');
+    const selectAllCheckbox = el('select-all-servers');
+    const deleteSelectedBtn = el('delete-selected-btn');
+    
+    const STORAGE_KEY = 'domainCleanerDataV8';
+    const DOMAIN_REGEX = /^(?!:\/\/)([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,63}$/;
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    let appData = { servers: [], bounceHistory: [] }, currentServerId = null;
+    let lastResults = { kept: [], removed: [] };
+    let currentPage = 1, itemsPerPage = 5;
+    let sortColumn = 'name', sortDirection = 'asc';
+    let selectedServerIds = new Set();
+
+    // --- UI/UX Functions ---
+    let modalTimeout = null;
+    function showNotification(title, message) {
+      el('modalTitle').textContent = title;
+      el('modalMessage').innerHTML = message;
+      showModal('notificationModalOverlay');
+      clearTimeout(modalTimeout);
+      modalTimeout = setTimeout(() => hideModal('notificationModalOverlay'), 2000);
+    }
+    function showModal(id) { el(id).classList.add('show'); }
+    function hideModal(id) { el(id).classList.remove('show'); }
+    function logMessage(message) { log.innerHTML = `<p>${message}</p>`; }
+    
+    function addStat(text, type = null) {
+        const s = document.createElement('div');
+        s.className = 'stat';
+        s.textContent = text;
+        if (type) {
+            s.dataset.type = type;
+            s.title = `Click to view the list of ${type} domains`;
+        }
+        stats.appendChild(s);
+    }
+    
+    function toggleProcessingState(isProcessing) {
+        processBtn.disabled = isProcessing;
+        processBtn.textContent = isProcessing ? 'Processing...' : 'Remove Bounced & Save';
+    }
+
+    // --- Data Management ---
+    const loadDataFromStorage = () => appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { servers: [], bounceHistory: [] };
+    const saveDataToStorage = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+
+    // --- Server Management, Sorting & Pagination ---
+    function renderServerTable() {
+        const searchTerm = searchBar.value.toLowerCase();
+        let filteredServers = appData.servers.filter(server => 
+            server.name.toLowerCase().includes(searchTerm) || 
+            server.ips.toLowerCase().includes(searchTerm)
+        );
+
+        filteredServers.sort((a, b) => {
+            let valA, valB;
+            if (sortColumn === 'name') {
+                valA = a.name.toLowerCase();
+                valB = b.name.toLowerCase();
+            } else if (sortColumn === 'domains') {
+                valA = a.domains.split('\n').filter(Boolean).length;
+                valB = b.domains.split('\n').filter(Boolean).length;
+            }
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        const displayAll = itemsPerPage === 'all';
+        const currentItemsPerPage = displayAll ? filteredServers.length : parseInt(itemsPerPage);
+        const totalPages = displayAll || currentItemsPerPage === 0 ? 1 : Math.ceil(filteredServers.length / currentItemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+
+        const startIndex = (currentPage - 1) * currentItemsPerPage;
+        const endIndex = displayAll ? filteredServers.length : startIndex + currentItemsPerPage;
+        const paginatedServers = filteredServers.slice(startIndex, endIndex);
+
+        serverTableBody.innerHTML = '';
+        if (paginatedServers.length === 0) {
+            serverTableBody.innerHTML = `<tr><td colspan="5" class="no-servers-message">No servers found.</td></tr>`;
+        } else {
+            const icon = {
+                load: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" /></svg>`,
+                edit: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z" /><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z" /></svg>`,
+                copy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V16.5a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 017 16.5v-13z" /><path d="M5 6.5A1.5 1.5 0 016.5 5h3A.5.5 0 0010 4.5H6.5A2.5 2.5 0 004 7v10.5A2.5 2.5 0 006.5 20h7a2.5 2.5 0 002.5-2.5V16a.5.5 0 00-1 0v1.5a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 015 17.5V6.5z" /></svg>`,
+                del: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.58.22-2.365.468a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4.5a.75.75 0 01.75.75v10.5a.75.75 0 01-1.5 0V5.25A.75.75 0 0110 4.5z" clip-rule="evenodd" /></svg>`
+            };
+            paginatedServers.forEach(server => {
+                const domainCount = server.domains.split('\n').filter(Boolean).length;
+                const ipDisplay = server.ips.split('\n').filter(Boolean).join('<br>') || 'N/A';
+                const isSelected = selectedServerIds.has(server.id);
+                const row = serverTableBody.insertRow();
+                row.dataset.serverId = server.id;
+                if (server.id === currentServerId) row.classList.add('loaded');
+                if (isSelected) row.classList.add('selected');
+
+                row.innerHTML = `
+                    <td class="checkbox-cell"><input type="checkbox" class="server-select-checkbox" data-id="${server.id}" ${isSelected ? 'checked' : ''}></td>
+                    <td>${server.name}</td>
+                    <td>${ipDisplay}</td>
+                    <td>${domainCount}</td>
+                    <td class="actions">
+                        <button class="btn small load-btn" data-id="${server.id}" title="Load Server">${icon.load}</button>
+                        <button class="btn secondary small copy-btn" data-id="${server.id}" title="Copy Domains">${icon.copy}</button>
+                        <button class="btn secondary small edit-btn" data-id="${server.id}" title="Edit Server">${icon.edit}</button>
+                        <button class="btn danger small delete-btn" data-id="${server.id}" title="Delete Server">${icon.del}</button>
+                    </td>
+                `;
+            });
+        }
+        updateSortIndicators();
+        renderPaginationControls(totalPages, filteredServers.length);
+        updateSelectAllCheckboxState();
+        updateDeleteSelectedButton();
+    }
+
+    function updateSortIndicators() {
+        document.querySelectorAll('.sort-indicator').forEach(span => span.textContent = '');
+        const activeHeader = document.querySelector(`th[data-sort="${sortColumn}"] .sort-indicator`);
+        if (activeHeader) activeHeader.textContent = sortDirection === 'asc' ? '▲' : '▼';
+    }
+
+    function renderPaginationControls(totalPages, totalItems) {
+        if (totalItems === 0) {
+            paginationControls.style.display = 'none';
+            return;
+        }
+
+        paginationControls.style.display = 'flex';
+        
+        if (totalPages <= 1) {
+            paginationInfo.textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''}`;
+            prevPageBtn.style.display = 'none';
+            nextPageBtn.style.display = 'none';
+        } else {
+            paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${totalItems} items)`;
+            prevPageBtn.style.display = 'inline-flex';
+            nextPageBtn.style.display = 'inline-flex';
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
+        }
+    }
+    
+    function handleTableClick(event) {
+        const target = event.target;
+        const serverId = target.closest('tr')?.dataset.serverId;
+        if (!serverId) return;
+
+        if (target.matches('.server-select-checkbox')) {
+            toggleServerSelection(parseInt(serverId));
+        } else {
+            const button = target.closest('button');
+            if (!button) return;
+            const id = button.dataset.id;
+            if (button.classList.contains('load-btn')) loadServer(id);
+            else if (button.classList.contains('edit-btn')) openServerModal('edit', id);
+            else if (button.classList.contains('delete-btn')) confirmDeleteServer([id]);
+            else if (button.classList.contains('copy-btn')) copyServerDomains(id);
+        }
+    }
+
+    function toggleServerSelection(serverId) {
+        if (selectedServerIds.has(serverId)) {
+            selectedServerIds.delete(serverId);
+        } else {
+            selectedServerIds.add(serverId);
+        }
+        renderServerTable();
+    }
+
+    function updateSelectAllCheckboxState() {
+        const checkboxes = document.querySelectorAll('.server-select-checkbox');
+        if (checkboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+            return;
+        }
+        const visibleIds = [...checkboxes].map(cb => parseInt(cb.dataset.id));
+        const allVisibleSelected = visibleIds.every(id => selectedServerIds.has(id));
+        const someVisibleSelected = visibleIds.some(id => selectedServerIds.has(id));
+
+        selectAllCheckbox.checked = allVisibleSelected;
+        selectAllCheckbox.indeterminate = !allVisibleSelected && someVisibleSelected;
+    }
+    
+    function updateDeleteSelectedButton() {
+        if (selectedServerIds.size > 0) {
+            deleteSelectedBtn.style.display = 'inline-flex';
+            deleteSelectedBtn.textContent = `Delete Selected (${selectedServerIds.size})`;
+        } else {
+            deleteSelectedBtn.style.display = 'none';
+        }
+    }
+
+    function copyServerDomains(serverId) {
+        const server = appData.servers.find(s => s.id == serverId);
+        if (server && server.domains) {
+            navigator.clipboard.writeText(server.domains).then(() => {
+                showNotification('Copied!', `Domains for <strong>${server.name}</strong> copied to clipboard.`);
+            });
+        }
+    }
+
+    function loadServer(serverId) {
+        const server = appData.servers.find(s => s.id == serverId);
+        if (!server) return;
+        currentServerId = server.id;
+        domainsBox.value = server.domains;
+        logMessage(`Loaded server: <strong>${server.name}</strong>.`);
+        renderServerTable();
+    }
+
+    function switchToManualMode() {
+        currentServerId = null;
+        domainsBox.value = '';
+        logMessage('Switched to Manual Mode. Paste domains to begin.');
+        renderServerTable();
+    }
+
+    function openServerModal(mode, serverId = null) {
+        serverForm.reset();
+        const title = el('server-modal-title'), idInput = el('server-id-input');
+        const nameInput = el('server-name-input'), ipsInput = el('server-ips-input'), domainsInput = el('server-domains-input');
+        if (mode === 'edit' && serverId) {
+            const server = appData.servers.find(s => s.id == serverId);
+            if (!server) return;
+            title.textContent = 'Edit Server';
+            idInput.value = server.id;
+            nameInput.value = server.name;
+            ipsInput.value = server.ips;
+            domainsInput.value = server.domains;
+        } else {
+            title.textContent = 'Add New Server';
+            idInput.value = '';
+        }
+        showModal('serverModalOverlay');
+    }
+
+    function handleSaveServer(event) {
+        event.preventDefault();
+        const id = el('server-id-input').value;
+        const serverData = {
+            name: el('server-name-input').value.trim(),
+            ips: el('server-ips-input').value.trim(),
+            domains: el('server-domains-input').value.trim(),
+        };
+        if (!serverData.name) {
+             showNotification('Error', 'Server Name is required.');
+             return;
+        }
+        if (id) {
+            const index = appData.servers.findIndex(s => s.id == id);
+            if (index > -1) appData.servers[index] = { ...appData.servers[index], ...serverData };
+        } else {
+            serverData.id = Date.now();
+            appData.servers.push(serverData);
+        }
+        saveDataToStorage();
+        renderServerTable();
+        hideModal('serverModalOverlay');
+        showNotification('Success', `Server '${serverData.name}' saved.`);
+    }
+    
+    function confirmDeleteServer(serverIdsToDelete) {
+        const confirmBtn = el('deleteModalConfirm');
+        const messageEl = el('delete-modal-message');
+        
+        confirmBtn.dataset.serverIds = JSON.stringify(Array.from(serverIdsToDelete));
+
+        if (serverIdsToDelete.length === 1) {
+             const server = appData.servers.find(s => s.id == serverIdsToDelete[0]);
+             if(!server) return;
+             messageEl.innerHTML = `Delete server <strong>${server.name}</strong>? This cannot be undone.`;
+        } else {
+             messageEl.innerHTML = `Are you sure you want to delete <strong>${serverIdsToDelete.length}</strong> selected servers? This cannot be undone.`;
+        }
+        showModal('deleteModalOverlay');
+    }
+
+    function executeDelete() {
+        const serverIdsToDelete = new Set(JSON.parse(el('deleteModalConfirm').dataset.serverIds).map(Number));
+        
+        appData.servers = appData.servers.filter(s => !serverIdsToDelete.has(s.id));
+        
+        let unloadedManual = false;
+        serverIdsToDelete.forEach(id => {
+            if (currentServerId == id) unloadedManual = true;
+            selectedServerIds.delete(id);
+        });
+
+        saveDataToStorage();
+        
+        if (unloadedManual) switchToManualMode();
+        else renderServerTable();
+        
+        hideModal('deleteModalOverlay');
+        const plural = serverIdsToDelete.size > 1 ? 's' : '';
+        showNotification('Deleted', `The server${plural} ha${plural ? 've' : 's'} been removed.`);
+    }
+
+    // --- Core Domain Processing Logic ---
+    function processDomains() {
+      stats.innerHTML = '';
+      toggleProcessingState(true);
+      
+      const getLines = (text) => text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+      let master = getLines(domainsBox.value).map(l => l.trim().toLowerCase()).filter(l => DOMAIN_REGEX.test(l));
+      const originalCount = master.length;
+
+      if (deduplicateMasterCheckbox.checked) {
+          master = [...new Set(master)];
+      }
+      const deduplicatedCount = master.length;
+
+      if (master.length === 0) {
+          showNotification('Error', 'The domain list is empty or invalid.');
+          toggleProcessingState(false);
+          return;
+      }
+      const toRemoveSet = new Set(getLines(removeBox.value).map(l => l.trim()).filter(Boolean).map(line => {
+        if (EMAIL_REGEX.test(line)) return line.split('@').pop().toLowerCase();
+        if (DOMAIN_REGEX.test(line.toLowerCase())) return line.toLowerCase();
+        return null;
+      }).filter(Boolean));
+      
+      const keptList = master.filter(domain => !toRemoveSet.has(domain));
+      const removedList = master.filter(domain => toRemoveSet.has(domain));
+      
+      lastResults = { kept: keptList, removed: removedList };
+      updateBounceHistory(removedList);
+
+      el('results-kept-modal').value = keptList.join('\n');
+      el('kept-count').textContent = `(${keptList.length})`;
+      el('results-removed-modal').value = removedList.join('\n');
+      el('removed-count').textContent = `(${removedList.length})`;
+      showModal('resultsModalOverlay');
+
+      addStat(`Original: ${originalCount}`);
+      if(deduplicateMasterCheckbox.checked && originalCount !== deduplicatedCount) {
+          addStat(`Deduplicated: ${deduplicatedCount}`);
+      }
+      addStat(`Removed: ${removedList.length}`, 'removed');
+      addStat(`Kept: ${keptList.length}`, 'kept');
+
+      if (currentServerId) {
+          const index = appData.servers.findIndex(s => s.id == currentServerId);
+          if (index > -1) {
+              appData.servers[index].domains = keptList.join('\n');
+              saveDataToStorage();
+              domainsBox.value = appData.servers[index].domains;
+              logMessage(`<strong>Saved.</strong> Server '${appData.servers[index].name}' updated.`);
+              renderServerTable();
+          }
+      } else {
+          logMessage(`<strong>Done.</strong> Processed in manual mode (not saved).`);
+      }
+      toggleProcessingState(false);
+    }
+    
+    function updateBounceHistory(removedList) {
+        const historySet = new Set(appData.bounceHistory);
+        let addedCount = 0;
+        removedList.forEach(domain => {
+            if (!historySet.has(domain)) {
+                historySet.add(domain);
+                appData.bounceHistory.push(domain);
+                addedCount++;
+            }
+        });
+        if (addedCount > 0) {
+            appData.bounceHistory.sort();
+            saveDataToStorage();
+        }
+    }
+
+    function handleStatClick(event) {
+        const statType = event.target.dataset.type;
+        if (!statType) return;
+
+        const list = lastResults[statType];
+        if (list && list.length > 0) {
+            const title = statType.charAt(0).toUpperCase() + statType.slice(1);
+            el('preview-modal-title').textContent = `Last ${title} Domains`;
+            el('preview-modal-subtitle').textContent = `A temporary list from the last cleaning process.`;
+            el('preview-domains-modal').value = list.join('\n');
+            showModal('previewModalOverlay');
+        } else {
+            showNotification('No Data', `The last list of ${statType} domains is empty.`);
+        }
+    }
+
+    // --- Import / Export ---
+    function exportData() {
+        const dataStr = JSON.stringify(appData, null, 2);
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `domain-cleaner-backup-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showNotification('Success', 'Your data has been exported.');
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (Array.isArray(importedData.servers) && Array.isArray(importedData.bounceHistory)) {
+                    if (confirm("Are you sure you want to overwrite all current data with the imported file?")) {
+                        appData = importedData;
+                        saveDataToStorage();
+                        currentPage = 1;
+                        selectedServerIds.clear();
+                        renderServerTable();
+                        showNotification('Success', 'Data has been imported successfully.');
+                    }
+                } else {
+                    throw new Error("Invalid file structure.");
+                }
+            } catch (error) {
+                showNotification('Error', 'Could not import data. The file may be corrupt or in the wrong format.');
+            } finally {
+                importFile.value = '';
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- App Initialization & Event Listeners ---
+    function initializeApp() {
+        processBtn.addEventListener('click', processDomains);
+        addServerBtn.addEventListener('click', () => openServerModal('add'));
+        serverTableBody.addEventListener('click', handleTableClick);
+        serverForm.addEventListener('submit', handleSaveServer);
+        el('deleteModalConfirm').addEventListener('click', executeDelete);
+        deleteSelectedBtn.addEventListener('click', () => {
+            if (selectedServerIds.size > 0) {
+                confirmDeleteServer(selectedServerIds);
+            }
+        });
+        stats.addEventListener('click', handleStatClick);
+        viewHistoryBtn.addEventListener('click', () => {
+            el('history-domains-modal').value = appData.bounceHistory.join('\n');
+            showModal('historyModalOverlay');
+        });
+        searchBar.addEventListener('input', () => {
+            currentPage = 1;
+            renderServerTable();
+        });
+        exportBtn.addEventListener('click', exportData);
+        importBtn.addEventListener('click', () => importFile.click());
+        importFile.addEventListener('change', importData);
+        
+        itemsPerPageSelect.addEventListener('change', (e) => {
+            itemsPerPage = e.target.value;
+            currentPage = 1;
+            renderServerTable();
+        });
+        
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderServerTable();
+            }
+        });
+        nextPageBtn.addEventListener('click', () => {
+            const totalItems = appData.servers.filter(server => server.name.toLowerCase().includes(searchBar.value.toLowerCase()) || server.ips.toLowerCase().includes(searchBar.value.toLowerCase())).length;
+            const totalPages = itemsPerPage === 'all' ? 1 : Math.ceil(totalItems / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderServerTable();
+            }
+        });
+        
+        serverTableHead.addEventListener('click', (e) => {
+            const header = e.target.closest('th');
+            if (header && header.dataset.sort) {
+                const newSortColumn = header.dataset.sort;
+                if (sortColumn === newSortColumn) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = newSortColumn;
+                    sortDirection = 'asc';
+                }
+                renderServerTable();
+            } else if (e.target.id === 'select-all-servers') {
+                const checkboxes = document.querySelectorAll('.server-select-checkbox');
+                const visibleIds = [...checkboxes].map(cb => parseInt(cb.dataset.id));
+                const allSelected = visibleIds.every(id => selectedServerIds.has(id));
+                visibleIds.forEach(id => {
+                    if (allSelected) selectedServerIds.delete(id);
+                    else selectedServerIds.add(id);
+                });
+                renderServerTable();
+            }
+        });
+
+        el('clearDomains').addEventListener('click', () => currentServerId ? switchToManualMode() : (domainsBox.value = ''));
+        el('clearRemove').addEventListener('click', () => removeBox.value = '');
+        
+        el('copyDomains').addEventListener('click', () => {
+            if (domainsBox.value) navigator.clipboard.writeText(domainsBox.value).then(() => showNotification('Copied!', 'Domain list copied to clipboard.'));
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => e.target === overlay && hideModal(overlay.id));
+        });
+        
+        el('preview').addEventListener('click', () => {
+            const getLines = (text) => text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+            const extracted = [...new Set(getLines(removeBox.value).map(l => l.trim()).filter(Boolean).map(line => {
+                if (EMAIL_REGEX.test(line)) return line.split('@').pop().toLowerCase();
+                if (DOMAIN_REGEX.test(line.toLowerCase())) return line.toLowerCase();
+                return null;
+            }).filter(Boolean))];
+            if (extracted.length > 0) {
+                el('preview-modal-title').textContent = 'Preview Extracted Domains';
+                el('preview-modal-subtitle').textContent = `Unique domains from the 'Bounced' list.`;
+                el('preview-domains-modal').value = extracted.join('\n');
+                showModal('previewModalOverlay');
+            } else showNotification("No Domains", "No valid domains found.");
+        });
+        
+        ['resultsModalClose', 'previewModalClose', 'serverModalClose', 'deleteModalCancel', 'historyModalClose'].forEach(id => {
+            el(id).addEventListener('click', () => hideModal(el(id).closest('.modal-overlay').id));
+        });
+        
+        el('copyHistoryBtn').addEventListener('click', () => navigator.clipboard.writeText(el('history-domains-modal').value).then(() => showNotification("Copied", `Bounce history copied.`)));
+        el('clearHistoryBtn').addEventListener('click', () => {
+            if (confirm("Are you sure you want to permanently delete the entire bounce history? This cannot be undone.")) {
+                appData.bounceHistory = [];
+                saveDataToStorage();
+                el('history-domains-modal').value = '';
+                showNotification('History Cleared', 'The global bounce history has been deleted.');
+            }
+        });
+        
+        const setupActionBtn = (id, targetId, action, title, filename) => {
+            el(id).addEventListener('click', () => {
+                const content = el(targetId).value;
+                if (action === 'copy') navigator.clipboard.writeText(content).then(() => showNotification("Copied", `${title} copied.`));
+                else {
+                    const a = document.createElement('a');
+a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
+a.download = filename;
+a.click();
+URL.revokeObjectURL(a.href);
+                }
+            });
+        };
+        setupActionBtn('copyKept', 'results-kept-modal', 'copy', 'Kept Domains');
+        setupActionBtn('downloadKept', 'results-kept-modal', 'download', 'Kept Domains', 'kept-domains.txt');
+        setupActionBtn('copyRemoved', 'results-removed-modal', 'copy', 'Removed Domains');
+        setupActionBtn('downloadRemoved', 'results-removed-modal', 'download', 'Removed Domains', 'removed-domains.txt');
+        setupActionBtn('copyPreview', 'preview-domains-modal', 'copy', 'Preview List');
+
+        loadDataFromStorage();
+        itemsPerPage = itemsPerPageSelect.value;
+        renderServerTable();
+    }
+    
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
+</body>
+</html>
+

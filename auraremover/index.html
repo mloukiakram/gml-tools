@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura - Line Processor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- PROFESSIONAL LIGHT-THEME DESIGN SYSTEM --- */
+        :root {
+            --bg-main: #f4f7f9;
+            --bg-card: rgba(255, 255, 255, 0.75);
+            --bg-card-solid: #ffffff;
+            --bg-control: rgba(248, 249, 250, 0.8);
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-tertiary: #adb5bd;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 2px var(--shadow-color);
+            --shadow-md: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px var(--shadow-color);
+            
+            --accent-blue: #0d6efd; --accent-blue-hover: #0b5ed7;
+            --accent-red: #dc3545; --accent-red-hover: #bb2d3b;
+            --accent-green: #198754;
+            --accent-orange: #fd7e14;
+            
+            --font-main: 'Inter', system-ui, sans-serif;
+            --font-mono: 'Fira Code', 'Courier New', monospace;
+            --transition-speed: 0.2s;
+        }
+
+        /* --- BASE & LAYOUT --- */
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-main); background-color: var(--bg-main); color: var(--text-primary);
+            margin: 0; padding: 2.5rem 1.5rem; display: flex; justify-content: center;
+            -webkit-font-smoothing: antialiased; -moz-osx-smoothing: grayscale;
+            overflow: hidden;
+        }
+        #background-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        }
+        .main-container {
+            width: 100%; max-width: 1300px; height: calc(100vh - 5rem);
+            display: flex; flex-direction: column; gap: 1.5rem;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .main-container::-webkit-scrollbar { width: 8px; }
+        .main-container::-webkit-scrollbar-track { background: transparent; }
+        .main-container::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.2); border-radius: 4px; border: 2px solid transparent; background-clip: content-box;}
+
+        header { text-align: center; margin-bottom: 1rem; }
+        header h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; color: var(--text-primary); }
+        
+        .card {
+            background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem;
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-md); padding: 1.5rem; display: flex; flex-direction: column;
+        }
+        
+        /* --- CONTROLS DECK --- */
+        .controls-card { background-color: var(--bg-control); }
+        .controls-grid { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; }
+        .control-group { display: flex; align-items: center; gap: 0.75rem; }
+        .control-group-label { font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
+        .toggle-switch { display: flex; background-color: #e9ecef; border-radius: 0.5rem; padding: 4px; border: 1px solid #dee2e6; }
+        .toggle-switch button { padding: 0.4rem 0.8rem; border: 1px solid transparent; background: transparent; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem; cursor: pointer; color: var(--text-secondary); transition: all var(--transition-speed) ease; }
+        .toggle-switch button.active { background: var(--bg-card-solid); color: var(--text-primary); border-color: #ced4da; box-shadow: var(--shadow-sm); }
+        .toggle-switch button.delete.active { color: var(--accent-red); }
+        .toggle-switch button.keep.active { color: var(--accent-blue); }
+
+        /* --- GENERAL COMPONENTS --- */
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;}
+        h3.card-title { font-size: 1.125rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            font-weight: 600; font-size: 0.875rem; padding: 0.6rem 1rem; border-radius: 0.5rem;
+            border: 1px solid transparent; cursor: pointer; transition: all var(--transition-speed) ease; user-select: none;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .btn:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+        .btn.primary { background-color: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+        .btn.primary:hover { background-color: var(--accent-blue-hover); border-color: var(--accent-blue-hover); }
+        .btn.danger { background-color: var(--accent-red); color: white; border-color: var(--accent-red); }
+        .btn.danger:hover { background-color: var(--accent-red-hover); border-color: var(--accent-red-hover); }
+        .btn.warning { background-color: var(--accent-orange); color: white; border-color: var(--accent-orange); }
+        .btn.warning:hover { background-color: #ea580c; border-color: #ea580c;}
+        .btn.secondary { background: var(--bg-card-solid); color: var(--text-primary); border-color: #ced4da; }
+        .btn.secondary:hover { border-color: #adb5bd; background-color: #f8f9fa; }
+        .btn:disabled { background: #e9ecef; color: #6c757d; cursor: not-allowed; transform: none; box-shadow: none; border-color: #dee2e6; }
+        .btn svg { width: 16px; height: 16px; }
+
+        /* --- TEXT AREAS & GRID --- */
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-io { grid-template-columns: 1fr 1fr; }
+        textarea {
+            width: 100%; min-height: 250px; padding: 0.8rem 1rem; font-size: 0.9rem;
+            border: 1px solid #ced4da; border-radius: 0.5rem; resize: vertical;
+            transition: all var(--transition-speed) ease; box-sizing: border-box; flex-grow: 1;
+            font-family: var(--font-mono); background-color: var(--bg-card-solid); color: var(--text-primary);
+        }
+        textarea:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2); outline: none; }
+        .line-counter { font-size: 0.8rem; color: var(--text-tertiary); text-align: right; margin-top: 0.5rem; height: 1em; }
+
+        /* --- LIST TABLE --- */
+        .list-table { width: 100%; border-collapse: collapse; }
+        .list-table th, .list-table td { padding: 0.75rem; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--border-color); }
+        .list-table th { font-weight: 500; font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em; }
+        .list-table tr:last-child td { border-bottom: none; }
+        .list-table tr:hover { background-color: rgba(0, 0, 0, 0.025); }
+        .list-table tr.loaded { background-color: rgba(13, 110, 253, 0.07); }
+        .list-table .actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+        
+        /* --- MAIN ACTION DIVIDER --- */
+        .action-divider { text-align: center; margin: 0; }
+        #process-btn { padding: 0.8rem 2.5rem; font-size: 1rem; border-radius: 99px; min-width: 300px; }
+        #process-btn svg { width: 20px; height: 20px; }
+        
+        /* --- TOAST & MODAL --- */
+        .toast-container { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 1rem; z-index: 2000; }
+        .toast { padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; font-weight: 600; box-shadow: var(--shadow-md); opacity: 0; transform: translateX(100%); animation: slideIn 0.5s forwards, slideOut 0.5s 4.5s forwards; }
+        .toast.success { background-color: var(--accent-green); }
+        .toast.warning { background-color: var(--accent-orange); }
+        @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideOut { to { opacity: 0; transform: translateX(100%); } }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-overlay.show .modal {
+            animation: modal-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .modal {
+            background-color: var(--bg-card-solid);
+            max-width: 500px;
+            width: 95%;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            transform: translateY(20px) scale(0.98);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        @keyframes modal-in {
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+        .modal h3 { color: var(--text-primary); margin-top:0; }
+        .modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background-color: var(--bg-main);
+            border: 1px solid #ced4da;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+        }
+        .form-group textarea { font-family: var(--font-mono); }
+    </style>
+</head>
+<body>
+    <canvas id="background-canvas"></canvas>
+    <div class="main-container">
+        <header><h1>Lines Processor</h1></header>
+        
+        <div class="card controls-card">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <span class="control-group-label">Mode</span>
+                    <div class="toggle-switch">
+                        <button id="mode-delete" class="active delete">Delete</button>
+                        <button id="mode-keep" class="keep">Keep</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <span class="control-group-label">Filter</span>
+                    <div class="toggle-switch">
+                        <button id="filter-by-number" class="active">Line Number</button>
+                        <button id="filter-by-keyword">Keyword</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                     <button class="btn warning" id="undo-btn" disabled>Undo</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Saved Lists</h3>
+                <div>
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                    <button class="btn secondary" id="import-btn">Import</button>
+                    <button class="btn secondary" id="export-btn">Export</button>
+                    <button class="btn primary" id="add-new-list-btn">Add New List</button>
+                </div>
+            </div>
+            <table class="list-table">
+                <thead><tr><th>Name</th><th>Lines</th><th style="text-align:right;">Actions</th></tr></thead>
+                <tbody id="saved-lists-table-body"></tbody>
+            </table>
+        </div>
+
+        <div class="grid grid-io">
+            <div class="card">
+                <h3 class="card-title">1. Source List</h3>
+                <textarea id="lineListInput" spellcheck="false" style="margin-top:1rem;"></textarea>
+                <div class="line-counter" id="source-line-counter">0 lines</div>
+            </div>
+            <div class="card">
+                <h3 class="card-title" id="raw-data-label">2. Line Numbers to Process</h3>
+                <textarea id="rawDataInput" spellcheck="false" style="margin-top:1rem;"></textarea>
+                <div class="line-counter" id="raw-data-line-counter">0 lines</div>
+            </div>
+        </div>
+        
+        <div class="action-divider"><button class="btn" id="process-btn"></button></div>
+
+        <div class="grid grid-io">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">3. Final Result</h3>
+                    <button class="btn primary" id="copy-result-btn">Copy</button>
+                </div>
+                <textarea id="finalResultOutput" readonly></textarea>
+            </div>
+            <div class="card">
+                <h3 class="card-title">4. Processing Log</h3>
+                <textarea id="logOutput" readonly style="margin-top:1rem;"></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-container" class="toast-container"></div>
+    
+    <div class="modal-overlay" id="listModalOverlay">
+        <div class="modal">
+            <h3 id="list-modal-title">Add New List</h3>
+            <form id="list-form">
+                <input type="hidden" id="list-id-input">
+                <div class="form-group">
+                    <label for="list-name-input">List Name</label>
+                    <input type="text" id="list-name-input" required placeholder="e.g., My Project Domains">
+                </div>
+                <div class="form-group">
+                    <label for="list-content-input">List Content</label>
+                    <textarea id="list-content-input" style="min-height: 150px;" placeholder="domain1.com..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn secondary" id="listModalCancel">Cancel</button>
+                    <button type="submit" class="btn primary">Save List</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal-overlay" id="deleteConfirmModalOverlay">
+        <div class="modal">
+            <h3>Confirm Deletion</h3>
+            <p id="delete-confirm-message"></p>
+            <div class="modal-footer">
+                <button type="button" class="btn secondary" id="deleteModalCancel">Cancel</button>
+                <button type="button" class="btn danger" id="deleteModalConfirm">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- CANVAS BACKGROUND ANIMATION ---
+        const canvas = document.getElementById('background-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: null, y: null };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = 'rgba(108, 117, 125, 0.5)';
+            }
+            update() {
+                if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+                if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+                this.x += this.speedX;
+                this.y += this.speedY;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            let numberOfParticles = (canvas.height * canvas.width) / 12000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function connectParticles() {
+            let opacityValue = 1;
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    let distance = Math.sqrt(Math.pow(particles[a].x - particles[b].x, 2) + Math.pow(particles[a].y - particles[b].y, 2));
+                    if (distance < 120) {
+                        opacityValue = 1 - (distance / 120);
+                        ctx.strokeStyle = `rgba(108, 117, 125, ${opacityValue})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            connectParticles();
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+        
+        resizeCanvas();
+        initParticles();
+        animate();
+
+        // --- FULL APPLICATION LOGIC ---
+        const el = (id) => document.getElementById(id);
+        const STORAGE_KEY = 'auraLineProcessor_v1';
+        let savedLists = [];
+        let currentLoadedListId = null;
+        let lastActionState = null;
+
+        let state = { mode: 'delete', filterBy: 'number' };
+
+        function updateUI() {
+            el('mode-delete').classList.toggle('active', state.mode === 'delete');
+            el('mode-keep').classList.toggle('active', state.mode === 'keep');
+            el('filter-by-number').classList.toggle('active', state.filterBy === 'number');
+            el('filter-by-keyword').classList.toggle('active', state.filterBy === 'keyword');
+            const filterText = state.filterBy === 'number' ? 'Line Numbers' : 'Keywords';
+            el('raw-data-label').textContent = `2. ${filterText} to Process`;
+            const processBtn = el('process-btn');
+            const actionText = state.mode === 'delete' ? 'Delete' : 'Keep';
+            let btnText = `${actionText} Lines`;
+            if (currentLoadedListId) btnText += ' & Update List';
+            const icon = state.mode === 'delete' ? 
+                `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>` : 
+                `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            processBtn.innerHTML = `${icon} ${btnText}`;
+            processBtn.className = `btn ${state.mode === 'delete' ? 'danger' : 'primary'}`;
+            el('undo-btn').disabled = !lastActionState;
+        }
+
+        function parseFilterData() {
+            const rawText = el('rawDataInput').value;
+            if (state.filterBy === 'keyword') {
+                return rawText.split('\n').map(k => k.trim().toLowerCase()).filter(Boolean);
+            }
+            const cleanedText = rawText.replace(/,/g, '\n');
+            const lines = cleanedText.split('\n');
+            const numbers = new Set();
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (/^\d+$/.test(trimmed)) {
+                    numbers.add(parseInt(trimmed, 10));
+                } else {
+                    const parts = trimmed.split(/[\s-]+/);
+                    const lastPart = parts[parts.length - 1];
+                    if (/^\d+$/.test(lastPart)) {
+                        numbers.add(parseInt(lastPart, 10));
+                    }
+                }
+            });
+            return Array.from(numbers).sort((a, b) => a - b);
+        }
+
+        function processAndShow() {
+            const filterData = parseFilterData();
+            if (filterData.length === 0) { showToast("Filter data is empty. Nothing to process.", "warning"); return; }
+            const sourceLines = el('lineListInput').value.split('\n');
+            const resultLines = [];
+            const logDetails = [];
+            if (currentLoadedListId) {
+                const listIndex = savedLists.findIndex(l => l.id === currentLoadedListId);
+                if (listIndex > -1) { lastActionState = { listId: currentLoadedListId, previousContent: savedLists[listIndex].content }; }
+            } else { lastActionState = null; }
+            sourceLines.forEach((line, index) => {
+                const currentLineNumber = index + 1;
+                const lineContentLower = line.trim().toLowerCase();
+                let shouldProcess = false;
+                if (state.filterBy === 'number') { shouldProcess = filterData.includes(currentLineNumber); } 
+                else { shouldProcess = filterData.some(keyword => lineContentLower.includes(keyword)); }
+                const keepLine = (state.mode === 'keep' && shouldProcess) || (state.mode === 'delete' && !shouldProcess);
+                if (keepLine) {
+                    resultLines.push(line);
+                    logDetails.push(`Line ${currentLineNumber}: Kept     -> "${line.trim()}"`);
+                } else {
+                    const logAction = state.mode === 'delete' ? 'DELETED' : 'Discarded';
+                    logDetails.push(`Line ${currentLineNumber}: ${logAction} -> "${line.trim()}"`);
+                }
+            });
+            const finalContent = resultLines.join('\n');
+            let updateMessage = "";
+            if (currentLoadedListId) {
+                const listIndex = savedLists.findIndex(l => l.id === currentLoadedListId);
+                if (listIndex > -1) {
+                    savedLists[listIndex].content = finalContent;
+                    saveListsToStorage();
+                    updateMessage = `\n✅ Saved list "${savedLists[listIndex].name}" was automatically updated.`;
+                    showToast(`List "${savedLists[listIndex].name}" updated.`, "success");
+                }
+            }
+            el('finalResultOutput').value = finalContent;
+            el('logOutput').value = [ `--- PROCESSING SUMMARY ---`, `Action: ${state.mode.toUpperCase()} lines based on ${filterData.length} ${state.filterBy}(s).`, `Lines Kept: ${resultLines.length}`, `Lines Removed: ${sourceLines.length - resultLines.length}`, updateMessage, `\n--- DETAILED LOG ---`, ...logDetails ].join('\n').trim();
+            if (currentLoadedListId) renderListTable();
+            updateUI();
+        }
+
+        function handleUndo() {
+            if (!lastActionState) return;
+            const listIndex = savedLists.findIndex(l => l.id === lastActionState.listId);
+            if (listIndex > -1) {
+                savedLists[listIndex].content = lastActionState.previousContent;
+                saveListsToStorage();
+                if (currentLoadedListId === lastActionState.listId) {
+                    el('lineListInput').value = lastActionState.previousContent;
+                    updateLineCount(el('lineListInput'), el('source-line-counter'));
+                }
+                renderListTable();
+                showToast(`Undo successful. List "${savedLists[listIndex].name}" restored.`, "success");
+            }
+            lastActionState = null;
+            updateUI();
+        }
+        
+        function handleExport() {
+            if (savedLists.length === 0) { showToast("No saved lists to export.", "warning"); return; }
+            const dataStr = JSON.stringify(savedLists, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `aura-processor-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url);
+            showToast("Lists exported successfully.", "success");
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported) && confirm("Importing will overwrite existing lists. Are you sure?")) {
+                        savedLists = imported; saveListsToStorage(); renderListTable(); showToast("Lists imported successfully.", "success");
+                    } else { throw new Error("Invalid format"); }
+                } catch { showToast("Import failed. Invalid file format.", "warning"); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function updateLineCount(textarea, counter) {
+            const text = textarea.value;
+            const lineCount = text ? text.split('\n').length : 0;
+            counter.textContent = `${lineCount} line${lineCount !== 1 ? 's' : ''}`;
+        }
+        
+        function showToast(message, type = 'success') {
+            const container = el('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        const loadListsFromStorage = () => savedLists = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        const saveListsToStorage = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(savedLists));
+
+        function renderListTable() {
+            const tableBody = el('saved-lists-table-body');
+            tableBody.innerHTML = '';
+            if (savedLists.length === 0) { tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 1rem; color:var(--text-secondary);">No saved lists. Add one to get started.</td></tr>`; return; }
+            savedLists.forEach(list => {
+                const row = tableBody.insertRow();
+                if (list.id === currentLoadedListId) row.classList.add('loaded');
+                const lineCount = list.content.split('\n').filter(Boolean).length;
+                row.innerHTML = `
+                    <td>${list.name}</td>
+                    <td>${lineCount}</td>
+                    <td class="actions">
+                        <button class="btn secondary" data-action="load" data-id="${list.id}" title="Load List">Load</button>
+                        <button class="btn secondary" data-action="edit" data-id="${list.id}" title="Edit List">Edit</button>
+                        <button class="btn danger" data-action="delete" data-id="${list.id}" title="Delete List">Delete</button>
+                    </td>`;
+            });
+        }
+        
+        function openListModal(mode, listId = null) {
+            el('list-form').reset();
+            if (mode === 'edit' && listId) {
+                const list = savedLists.find(l => l.id === listId);
+                if (!list) return;
+                el('list-modal-title').textContent = 'Edit List'; el('list-id-input').value = list.id;
+                el('list-name-input').value = list.name; el('list-content-input').value = list.content;
+            } else {
+                el('list-modal-title').textContent = 'Add New List'; el('list-id-input').value = '';
+            }
+            el('listModalOverlay').classList.add('show');
+        }
+
+        function handleSaveList(event) {
+            event.preventDefault();
+            const id = parseInt(el('list-id-input').value);
+            const listData = { name: el('list-name-input').value.trim(), content: el('list-content-input').value };
+            if (!listData.name) { showToast("List Name is required.", "warning"); return; }
+            if (id) {
+                const index = savedLists.findIndex(l => l.id === id);
+                if (index > -1) savedLists[index] = { ...savedLists[index], ...listData };
+            } else { listData.id = Date.now(); savedLists.push(listData); }
+            saveListsToStorage(); renderListTable(); el('listModalOverlay').classList.remove('show');
+            showToast("List saved successfully.", "success");
+        }
+
+        function confirmDeleteList(listId) {
+            const list = savedLists.find(l => l.id === listId); if (!list) return;
+            el('delete-confirm-message').innerHTML = `Are you sure you want to delete the list "<strong>${list.name}</strong>"?`;
+            el('deleteModalConfirm').dataset.listId = listId; el('deleteConfirmModalOverlay').classList.add('show');
+        }
+
+        function executeDelete() {
+            const listId = parseInt(el('deleteModalConfirm').dataset.listId);
+            savedLists = savedLists.filter(l => l.id !== listId); saveListsToStorage();
+            if (currentLoadedListId === listId) { switchToManualMode(); }
+            renderListTable(); el('deleteConfirmModalOverlay').classList.remove('show');
+            showToast("List deleted.", "success");
+        }
+
+        function switchToManualMode() {
+            el('lineListInput').value = ''; currentLoadedListId = null; lastActionState = null;
+            renderListTable(); updateUI();
+            updateLineCount(el('lineListInput'), el('source-line-counter'));
+        }
+        
+        function initializeApp() {
+            ['mode-delete', 'mode-keep', 'filter-by-number', 'filter-by-keyword'].forEach(id => {
+                el(id).addEventListener('click', () => {
+                    if (id.startsWith('mode')) state.mode = id.split('-')[1];
+                    else state.filterBy = id.split('-')[2];
+                    updateUI();
+                });
+            });
+            el('process-btn').addEventListener('click', processAndShow);
+            el('undo-btn').addEventListener('click', handleUndo);
+            const sourceInput = el('lineListInput'), rawInput = el('rawDataInput');
+            const sourceCounter = el('source-line-counter'), rawCounter = el('raw-data-line-counter');
+            sourceInput.addEventListener('input', () => {
+                updateLineCount(sourceInput, sourceCounter);
+                if (currentLoadedListId) {
+                    // If user edits a loaded list, switch to manual mode
+                    // to prevent accidental overwrites on the next run.
+                    currentLoadedListId = null;
+                    renderListTable();
+                    updateUI();
+                }
+            });
+            rawInput.addEventListener('input', () => updateLineCount(rawInput, rawCounter));
+            el('import-btn').addEventListener('click', () => el('import-file-input').click());
+            el('import-file-input').addEventListener('change', handleImport);
+            el('export-btn').addEventListener('click', handleExport);
+            el('add-new-list-btn').addEventListener('click', () => openListModal('add'));
+            el('list-form').addEventListener('submit', handleSaveList);
+            el('listModalCancel').addEventListener('click', () => el('listModalOverlay').classList.remove('show'));
+            el('deleteModalConfirm').addEventListener('click', executeDelete);
+            el('deleteModalCancel').addEventListener('click', () => el('deleteConfirmModalOverlay').classList.remove('show'));
+            el('saved-lists-table-body').addEventListener('click', (event) => {
+                const button = event.target.closest('button[data-action]'); if (!button) return;
+                const listId = parseInt(button.dataset.id); const action = button.dataset.action;
+                if (action === 'load') {
+                    const list = savedLists.find(l => l.id === listId);
+                    if (list) { el('lineListInput').value = list.content; currentLoadedListId = list.id; lastActionState = null; renderListTable(); updateUI(); updateLineCount(sourceInput, sourceCounter); }
+                } else if (action === 'edit') { openListModal('edit', listId); } 
+                else if (action === 'delete') { confirmDeleteList(listId); }
+            });
+            el('copy-result-btn').addEventListener('click', () => {
+                if (el('finalResultOutput').value) { navigator.clipboard.writeText(el('finalResultOutput').value); showToast("Result copied to clipboard!", "success"); }
+            });
+            loadListsFromStorage(); renderListTable(); updateUI();
+            updateLineCount(sourceInput, sourceCounter); updateLineCount(rawInput, rawCounter);
+        }
+        
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
+
