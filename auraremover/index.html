@@ -283,6 +283,19 @@
             </div>
         </div>
     </div>
+
+    <div class="modal-overlay" id="vmtaSelectionModalOverlay">
+        <div class="modal" style="max-width: 450px;">
+            <h3>Multiple VMTAs Detected</h3>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem;">Your filter list contains lines for multiple VMTAs. Please choose which group to process.</p>
+            <div id="vmta-selection-options" style="margin-bottom: 1rem; max-height: 200px; overflow-y: auto;">
+                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn secondary" id="vmtaModalCancel">Cancel</button>
+                <button type="button" class="btn primary" id="vmtaModalProcess">Process Selected</button>
+            </div>
+        </div>
+    </div>
     
     <script>
         // --- UNIFIED CANVAS BACKGROUND ANIMATION ---
@@ -380,45 +393,111 @@
             el('undo-btn').disabled = !lastActionState;
         }
 
+        /**
+         * *** MODIFIED FUNCTION V2 ***
+         * Parses the filter data input.
+         * Fixes the regex to correctly capture VMTA and Line Number.
+         */
         function parseFilterData() {
             const rawText = el('rawDataInput').value;
+            
+            // Keyword mode is unchanged
             if (state.filterBy === 'keyword') {
-                return rawText.split('\n').map(k => k.trim().toLowerCase()).filter(Boolean);
+                return { 
+                    type: 'keyword', 
+                    data: rawText.split('\n').map(k => k.trim().toLowerCase()).filter(Boolean) 
+                };
             }
+
+            // Number mode new logic
             const cleanedText = rawText.replace(/,/g, '\n');
             const lines = cleanedText.split('\n');
-            const numbers = new Set();
+            const parsedData = [];
+            
+            // *** UPDATED REGEX V2 ***
+            // Makes the IP octet group non-capturing (?:)
+            // Capture group 1: VMTA ([a-zA-Z0-9]+)
+            // Capture group 2: Line Number (\d+)
+            const vmtaRegex = /^\d+(?:\.\d+){3}-([a-zA-Z0-9]+)-.*-(\d+)$/; 
+
             lines.forEach(line => {
                 const trimmed = line.trim();
-                if (/^\d+$/.test(trimmed)) {
-                    numbers.add(parseInt(trimmed, 10));
+                if (!trimmed) return;
+
+                const match = trimmed.match(vmtaRegex);
+                if (match) {
+                    // New format: 51.75.47.9-bt-1818-112
+                    parsedData.push({
+                        line: parseInt(match[2], 10), // *** CORRECTED INDEX: 2 is line number ***
+                        vmta: match[1].toLowerCase()  // *** CORRECTED INDEX: 1 is vmta ***
+                    });
+                } else if (/^\d+$/.test(trimmed)) {
+                    // Simple number: 112
+                    parsedData.push({
+                        line: parseInt(trimmed, 10),
+                        vmta: null // Generic, no vmta
+                    });
                 } else {
+                    // Fallback for old logic: "some-text-112"
                     const parts = trimmed.split(/[\s-]+/);
                     const lastPart = parts[parts.length - 1];
                     if (/^\d+$/.test(lastPart)) {
-                        numbers.add(parseInt(lastPart, 10));
+                        parsedData.push({
+                            line: parseInt(lastPart, 10),
+                            vmta: null // Generic, no vmta
+                        });
                     }
                 }
             });
-            return Array.from(numbers).sort((a, b) => a - b);
+            
+            // Deduplicate based on line and vmta
+            const uniqueData = Array.from(new Map(parsedData.map(item => [`${item.line}-${item.vmta}`, item])).values());
+            return { 
+                type: 'number', 
+                data: uniqueData.sort((a, b) => a.line - b.line) 
+            };
         }
 
-        function processAndShow() {
-            const filterData = parseFilterData();
-            if (filterData.length === 0) { showToast("Filter data is empty. Nothing to process.", "warning"); return; }
+        /**
+         * *** NEW HELPER FUNCTION (Unchanged) ***
+         * Contains the actual processing logic.
+         */
+        function executeProcessing(selectedVmta, filterData, filterType) {
             const sourceLines = el('lineListInput').value.split('\n');
             const resultLines = [];
             const logDetails = [];
+
             if (currentLoadedListId) {
                 const listIndex = savedLists.findIndex(l => l.id === currentLoadedListId);
                 if (listIndex > -1) { lastActionState = { listId: currentLoadedListId, previousContent: savedLists[listIndex].content }; }
             } else { lastActionState = null; }
+
+            // Create a lookup set for line numbers based on the selected VMTA
+            let numberFilterSet;
+            let keywordFilterArray;
+
+            if (filterType === 'number') {
+                const targetVmta = selectedVmta === 'null' ? null : selectedVmta;
+                numberFilterSet = new Set(
+                    filterData
+                        .filter(item => item.vmta === targetVmta)
+                        .map(item => item.line)
+                );
+            } else {
+                keywordFilterArray = filterData;
+            }
+
             sourceLines.forEach((line, index) => {
                 const currentLineNumber = index + 1;
                 const lineContentLower = line.trim().toLowerCase();
                 let shouldProcess = false;
-                if (state.filterBy === 'number') { shouldProcess = filterData.includes(currentLineNumber); } 
-                else { shouldProcess = filterData.some(keyword => lineContentLower.includes(keyword)); }
+
+                if (filterType === 'number') {
+                    shouldProcess = numberFilterSet.has(currentLineNumber);
+                } else { // 'keyword'
+                    shouldProcess = keywordFilterArray.some(keyword => lineContentLower.includes(keyword));
+                }
+
                 const keepLine = (state.mode === 'keep' && shouldProcess) || (state.mode === 'delete' && !shouldProcess);
                 if (keepLine) {
                     resultLines.push(line);
@@ -428,6 +507,7 @@
                     logDetails.push(`Line ${currentLineNumber}: ${logAction} -> "${line.trim()}"`);
                 }
             });
+            
             const finalContent = resultLines.join('\n');
             let updateMessage = "";
             if (currentLoadedListId) {
@@ -439,10 +519,94 @@
                     showToast(`List "${savedLists[listIndex].name}" updated.`, "success");
                 }
             }
+            
             el('finalResultOutput').value = finalContent;
-            el('logOutput').value = [ `--- PROCESSING SUMMARY ---`, `Action: ${state.mode.toUpperCase()} lines based on ${filterData.length} ${state.filterBy}(s).`, `Lines Kept: ${resultLines.length}`, `Lines Removed: ${sourceLines.length - resultLines.length}`, updateMessage, `\n--- DETAILED LOG ---`, ...logDetails ].join('\n').trim();
+            
+            // Create a descriptive log summary
+            let filterDesc = "";
+            if (filterType === 'keyword') {
+                filterDesc = `${keywordFilterArray.length} keyword(s)`;
+            } else {
+                filterDesc = `${numberFilterSet.size} line number(s)`;
+                if (selectedVmta && selectedVmta !== 'null') {
+                    filterDesc += ` for VMTA "${selectedVmta}"`;
+                } else if (selectedVmta === 'null') {
+                    filterDesc += ` (generic, no VMTA)`;
+                } else {
+                     filterDesc += ` (generic)`;
+                }
+            }
+            
+            el('logOutput').value = [ `--- PROCESSING SUMMARY ---`, `Action: ${state.mode.toUpperCase()} lines based on ${filterDesc}.`, `Lines Kept: ${resultLines.length}`, `Lines Removed: ${sourceLines.length - resultLines.length}`, updateMessage, `\n--- DETAILED LOG ---`, ...logDetails ].join('\n').trim();
+            
             if (currentLoadedListId) renderListTable();
             updateUI();
+        }
+
+        /**
+         * *** MODIFIED FUNCTION (Unchanged) ***
+         * This function acts as a gatekeeper.
+         */
+        function processAndShow() {
+            const parsedResult = parseFilterData();
+
+            if (parsedResult.type === 'keyword') {
+                // Keyword mode doesn't need VMTA check, process directly
+                if (parsedResult.data.length === 0) { showToast("Filter data is empty. Nothing to process.", "warning"); return; }
+                executeProcessing(null, parsedResult.data, 'keyword');
+                return;
+            }
+
+            // Number mode logic
+            const filterData = parsedResult.data;
+            if (filterData.length === 0) {
+                showToast("Filter data is empty. Nothing to process.", "warning");
+                return;
+            }
+
+            // Check for multiple vmtas
+            const vmtas = new Set(filterData.map(item => item.vmta).filter(vmta => vmta !== null));
+            const uniqueVmtas = Array.from(vmtas);
+            const hasNullVmta = filterData.some(item => item.vmta === null);
+            
+            const totalOptionGroups = uniqueVmtas.length + (hasNullVmta ? 1 : 0);
+
+            if (totalOptionGroups > 1) {
+                // More than one VMTA (or VMTA + generic) detected! Show modal.
+                const optionsContainer = el('vmta-selection-options');
+                optionsContainer.innerHTML = ''; // Clear previous options
+                
+                uniqueVmtas.forEach((vmta, index) => {
+                    const id = `vmta-option-${vmta}`;
+                    optionsContainer.innerHTML += `
+                        <div style="margin-bottom: 0.5rem;">
+                            <input type="radio" id="${id}" name="vmta-select" value="${vmta}" ${index === 0 ? 'checked' : ''}>
+                            <label for="${id}" style="margin-left: 0.5rem; cursor: pointer;">Process only "<strong>${vmta}</strong>" lines</label>
+                        </div>
+                    `;
+                });
+                
+                if (hasNullVmta) {
+                     optionsContainer.innerHTML += `
+                        <div style="margin-bottom: 0.5rem;">
+                            <input type="radio" id="vmta-option-null" name="vmta-select" value="null" ${uniqueVmtas.length === 0 ? 'checked' : ''}>
+                            <label for="vmta-option-null" style="margin-left: 0.5rem; cursor: pointer;">Process only lines with <strong>no VMTA</strong> (generic numbers)</label>
+                        </div>
+                    `;
+                }
+
+                el('vmtaSelectionModalOverlay').classList.add('show');
+                // The 'vmtaModalProcess' button will handle the next step.
+            } else {
+                // 0 or 1 VMTA group detected. Process directly.
+                let selectedVmta = null;
+                if (uniqueVmtas.length === 1) {
+                    selectedVmta = uniqueVmtas[0];
+                } else if (hasNullVmta) {
+                    selectedVmta = 'null';
+                }
+                executeProcessing(selectedVmta, filterData, 'number');
+            }
         }
 
         function handleUndo() {
@@ -603,6 +767,27 @@
             el('listModalCancel').addEventListener('click', () => el('listModalOverlay').classList.remove('show'));
             el('deleteModalConfirm').addEventListener('click', executeDelete);
             el('deleteModalCancel').addEventListener('click', () => el('deleteConfirmModalOverlay').classList.remove('show'));
+
+            // *** Event Listeners for VMTA modal (Unchanged) ***
+            el('vmtaModalCancel').addEventListener('click', () => el('vmtaSelectionModalOverlay').classList.remove('show'));
+            el('vmtaModalProcess').addEventListener('click', () => {
+                const selectedRadio = document.querySelector('input[name="vmta-select"]:checked');
+                if (!selectedRadio) {
+                    showToast("Please select an option.", "warning");
+                    return;
+                }
+                
+                const selectedVmta = selectedRadio.value; // Will be 'bt', 'sky', or 'null'
+                
+                // Need to re-parse the data to pass to executeProcessing
+                const parsedResult = parseFilterData();
+                if (parsedResult.type !== 'number') return; // Should not happen
+                
+                executeProcessing(selectedVmta, parsedResult.data, 'number');
+                
+                el('vmtaSelectionModalOverlay').classList.remove('show');
+            });
+
             el('saved-lists-table-body').addEventListener('click', (event) => {
                 const button = event.target.closest('button[data-action]'); if (!button) return;
                 const listId = parseInt(button.dataset.id); const action = button.dataset.action;
