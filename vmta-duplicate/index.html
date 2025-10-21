@@ -216,7 +216,7 @@
                 
                 <div class="card" id="ipListSection" style="display: flex; flex-direction: column;">
                     <label for="ipList">IP & Domain List:</label>
-                    <textarea id="ipList" placeholder="195.154.200.28,qdfnet.com,...&#10;212.129.0.117,step.qdfnet.com,..."></textarea>
+                    <textarea id="ipList" placeholder="195.154.200.28,qdfnet.com,...&#10;2001:41d0:602:383e:5::a,fine.fa7yxdxy2j.com,17178017,...&#10;212.129.0.117,step.qdfnet.com,..."></textarea>
                 </div>
             </div>
 
@@ -224,15 +224,6 @@
                 <div class="form-group">
                     <label for="loopCount">Number of Duplications:</label>
                     <input type="number" id="loopCount" value="1" min="1" required style="max-width: 200px;">
-                </div>
-
-                <div class="format-selector">
-                    <label for="ipv6ModeToggle">IPv4 Mode</label>
-                    <label class="switch">
-                        <input type="checkbox" id="ipv6ModeToggle">
-                        <span class="slider"></span>
-                    </label>
-                    <label for="ipv6ModeToggle">IPv6 Mode</label>
                 </div>
                 
                 <div class="format-selector">
@@ -373,7 +364,7 @@
             const hostnameInputElem = document.getElementById('hostnameInput');
             const saveMailerIdCheck = document.getElementById('saveMailerIdCheck');
             const sequentialModeToggle = document.getElementById('sequentialModeToggle');
-            const ipv6ModeToggle = document.getElementById('ipv6ModeToggle'); // *** GET NEW TOGGLE ***
+            // *** IPv6 TOGGLE REMOVED ***
             const vMtaResultContainer = document.getElementById('vMtaResultContainer');
             const ipListResultContainer = document.getElementById('ipListResultContainer');
             const vMtaResultTextElem = document.getElementById('vMtaResultText');
@@ -406,12 +397,11 @@
                 }
             });
 
-            // *** ENTIRE SUBMIT FUNCTION IS UPDATED FOR IPV6 LOGIC ***
+            // *** ENTIRE SUBMIT FUNCTION IS UPDATED FOR SMART IPV4/IPV6 LOGIC ***
             form.addEventListener('submit', (event) => {
                 event.preventDefault();
                 const loops = parseInt(loopCountElem.value, 10);
                 const ipListText = ipListElem.value.trim();
-                const isIpv6Mode = ipv6ModeToggle.checked; // Check IPv6 toggle state
                 
                 let vMtaBaseText = '';
 
@@ -426,31 +416,33 @@
                         return;
                     }
 
-                    if (isIpv6Mode) {
-                        // --- NEW IPV6 LOGIC ---
-                        try {
-                            vMtaBaseText = ipLines.map(line => {
-                                const parts = line.split(',');
-                                if (parts.length < 3) {
-                                    throw new Error('Invalid IPv6 line format. Expected at least 3 comma-separated values.');
+                    try {
+                        // --- NEW SMART LOGIC ---
+                        // Process each line individually and build the vMtaBaseText
+                        vMtaBaseText = ipLines.map(line => {
+                            const parts = line.split(',');
+                            if (parts.length < 1 || !parts[0]) {
+                                throw new Error('Invalid line format: Cannot find IP address.');
+                            }
+                            
+                            const ip = parts[0].trim();
+                            const isIpv6 = ip.includes(':'); // Simple check for IPv6
+
+                            if (isIpv6) {
+                                // --- Build IPv6 format ---
+                                if (parts.length < 3 || !parts[2]) {
+                                    throw new Error(`Invalid IPv6 line for ${ip}: Expected at least 3 comma-separated values (IP,Domain,ID).`);
                                 }
-                                const ip = parts[0].trim(); // e.g., 2001:41d0:602:383e:5::a
-                                const id = parts[2].trim(); // e.g., 17178017
-                                if (!ip || !id) {
-                                    throw new Error('Missing IP or ID in IPv6 line.');
-                                }
+                                const id = parts[2].trim();
                                 return `<virtual-mta ipv6-${id}-${isp}-${mailerId}>\n smtp-source-ip ${ip}\n host-name ${hostname}\n</virtual-mta>`;
-                            }).join('\n');
-                        } catch (e) {
-                            showToast(e.message, 'warning');
-                            return;
-                        }
-                    } else {
-                        // --- EXISTING IPV4 LOGIC ---
-                        const ips = ipLines.map(line => line.split(',')[0].trim());
-                        vMtaBaseText = ips.map(ip => 
-                            `<virtual-mta ${ip}-${isp}-${mailerId}>\n smtp-source-ip ${ip}\n host-name ${hostname}\n</virtual-mta>`
-                        ).join('\n');
+                            } else {
+                                // --- Build IPv4 format ---
+                                return `<virtual-mta ${ip}-${isp}-${mailerId}>\n smtp-source-ip ${ip}\n host-name ${hostname}\n</virtual-mta>`;
+                            }
+                        }).join('\n');
+                    } catch (e) {
+                        showToast(e.message, 'warning');
+                        return;
                     }
                 } else { // Paste Config Mode
                     vMtaBaseText = vMtaTextElem.value.trim();
