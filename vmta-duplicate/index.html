@@ -225,6 +225,15 @@
                     <label for="loopCount">Number of Duplications:</label>
                     <input type="number" id="loopCount" value="1" min="1" required style="max-width: 200px;">
                 </div>
+
+                <div class="format-selector">
+                    <label for="ipv6ModeToggle">IPv4 Mode</label>
+                    <label class="switch">
+                        <input type="checkbox" id="ipv6ModeToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <label for="ipv6ModeToggle">IPv6 Mode</label>
+                </div>
                 
                 <div class="format-selector">
                     <label for="sequentialModeToggle">Standard Format</label>
@@ -364,6 +373,7 @@
             const hostnameInputElem = document.getElementById('hostnameInput');
             const saveMailerIdCheck = document.getElementById('saveMailerIdCheck');
             const sequentialModeToggle = document.getElementById('sequentialModeToggle');
+            const ipv6ModeToggle = document.getElementById('ipv6ModeToggle'); // *** GET NEW TOGGLE ***
             const vMtaResultContainer = document.getElementById('vMtaResultContainer');
             const ipListResultContainer = document.getElementById('ipListResultContainer');
             const vMtaResultTextElem = document.getElementById('vMtaResultText');
@@ -395,37 +405,69 @@
                     manualContainer.style.display = 'none';
                 }
             });
+
+            // *** ENTIRE SUBMIT FUNCTION IS UPDATED FOR IPV6 LOGIC ***
             form.addEventListener('submit', (event) => {
                 event.preventDefault();
                 const loops = parseInt(loopCountElem.value, 10);
                 const ipListText = ipListElem.value.trim();
+                const isIpv6Mode = ipv6ModeToggle.checked; // Check IPv6 toggle state
+                
                 let vMtaBaseText = '';
-                if (vMtaModeToggle.checked) {
+
+                if (vMtaModeToggle.checked) { // Manual Input Mode
                     const isp = ispInputElem.value.trim();
                     const mailerId = mailerIdInputElem.value.trim();
                     const hostname = hostnameInputElem.value.trim();
-                    const ips = ipListElem.value.trim().split('\n')
-                        .filter(line => line.trim() !== '')
-                        .map(line => line.split(',')[0].trim());
-                    if (!ips.length || !isp || !mailerId || !hostname) {
+                    const ipLines = ipListElem.value.trim().split('\n').filter(line => line.trim() !== '');
+
+                    if (!ipLines.length || !isp || !mailerId || !hostname) {
                         showToast("Please fill all manual fields and IP & Domain List.", 'warning');
                         return;
                     }
-                    vMtaBaseText = ips.map(ip => 
-                        `<virtual-mta ${ip}-${isp}-${mailerId}>\n smtp-source-ip ${ip}\n host-name ${hostname}\n</virtual-mta>`
-                    ).join('\n');
-                } else {
+
+                    if (isIpv6Mode) {
+                        // --- NEW IPV6 LOGIC ---
+                        try {
+                            vMtaBaseText = ipLines.map(line => {
+                                const parts = line.split(',');
+                                if (parts.length < 3) {
+                                    throw new Error('Invalid IPv6 line format. Expected at least 3 comma-separated values.');
+                                }
+                                const ip = parts[0].trim(); // e.g., 2001:41d0:602:383e:5::a
+                                const id = parts[2].trim(); // e.g., 17178017
+                                if (!ip || !id) {
+                                    throw new Error('Missing IP or ID in IPv6 line.');
+                                }
+                                return `<virtual-mta ipv6-${id}-${isp}-${mailerId}>\n smtp-source-ip ${ip}\n host-name ${hostname}\n</virtual-mta>`;
+                            }).join('\n');
+                        } catch (e) {
+                            showToast(e.message, 'warning');
+                            return;
+                        }
+                    } else {
+                        // --- EXISTING IPV4 LOGIC ---
+                        const ips = ipLines.map(line => line.split(',')[0].trim());
+                        vMtaBaseText = ips.map(ip => 
+                            `<virtual-mta ${ip}-${isp}-${mailerId}>\n smtp-source-ip ${ip}\n host-name ${hostname}\n</virtual-mta>`
+                        ).join('\n');
+                    }
+                } else { // Paste Config Mode
                     vMtaBaseText = vMtaTextElem.value.trim();
                 }
+
+                // --- DUPLICATION LOGIC (REMAINS THE SAME) ---
                 if ((!vMtaBaseText && !ipListText) || loops < 1) {
                     showToast("Please provide input and a valid number of duplications.", 'warning');
                     return;
                 }
+
                 let vMtaOutput = '';
                 let ipListOutput = '';
                 const vMtaRegex = /<virtual-mta\s+([\w\.\-]+)>/g;
                 let vMtaSequentialCounter = 1;
                 let ipSequentialCounter = 1;
+
                 for (let i = 1; i <= loops; i++) {
                     if (vMtaBaseText) {
                         if (sequentialModeToggle.checked) {
@@ -441,12 +483,15 @@
                         }
                     }
                 }
+
+                // --- IP LIST OUTPUT LOGIC (REMAINS THE SAME) ---
                 if (ipListText) {
                     const lines = ipListText.split('\n').filter(line => line.trim() !== '');
                     let allModifiedLines = [];
                     if (sequentialModeToggle.checked) {
                          for (let i = 1; i <= loops; i++) {
                             const modifiedLines = lines.map(line => {
+                                // This logic just appends isp-counter, regardless of IP type.
                                 const modifiedLine = `${line.trim()},${ispInputElem.value}-${ipSequentialCounter}`;
                                 ipSequentialCounter++;
                                 return modifiedLine;
@@ -456,12 +501,15 @@
                         ipListOutput = allModifiedLines.join('\n');
                     } else {
                         for (let i = 1; i <= loops; i++) {
+                            // This logic just appends isp-i, regardless of IP type.
                             const modifiedLines = lines.map(line => `${line.trim()},${ispInputElem.value}-${i}`);
                              allModifiedLines.push(modifiedLines.join('\n'));
                         }
                         ipListOutput = allModifiedLines.join('\n\n');
                     }
                 }
+                
+                // --- RENDER OUTPUT (REMAINS THE SAME) ---
                 let hasOutput = false;
                 if (vMtaOutput) {
                     vMtaResultTextElem.textContent = vMtaOutput;
@@ -481,6 +529,8 @@
                     resultsWrapper.style.display = 'block';
                 }
             });
+            
+            // --- COPY BUTTON LOGIC (REMAINS THE SAME) ---
             document.querySelectorAll('.copy-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const currentButton = e.currentTarget;
@@ -500,5 +550,3 @@
     </script>
 </body>
 </html>
-
-
