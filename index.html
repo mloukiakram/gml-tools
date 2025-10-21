@@ -3,88 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Tool Dashboard</title>
+    <title>GML Tool Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            padding: 0; 
+        :root {
+            --sidebar-width: 260px;
+            --bg-main: #f4f7f9;
+            --bg-sidebar: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-muted: #adb5bd;
+            --accent-blue: #0d6efd;
+            --accent-blue-soft: #e7f1ff;
+            --border-color: rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --transition-speed: 0.4s;
         }
-        .tab-bar {
-            background-color: #24292e; /* GitHub-like dark header */
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
             overflow: hidden;
-            border-bottom: 1px solid #444;
+            display: flex;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        .tab-bar button {
-            background-color: inherit;
-            float: left;
+
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background-image: linear-gradient(180deg, var(--bg-sidebar) 0%, #f8f9fa 100%);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translateX(-100%);
+            transition: transform var(--transition-speed) cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .sidebar-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        
+        .sidebar-nav {
+            flex-grow: 1;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 1rem 0;
+        }
+
+        .sidebar .nav-link {
+            display: block;
+            width: 100%;
+            padding: 1rem 1.5rem;
             border: none;
-            outline: none;
+            background: none;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
             cursor: pointer;
-            padding: 14px 18px;
-            font-size: 16px;
-            color: #f0f0f0;
-            transition: 0.3s;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            border-left: 4px solid transparent;
         }
-        .tab-bar button:hover { 
-            background-color: #444; 
+
+        .sidebar .nav-link:hover {
+            background-color: var(--accent-blue-soft);
+            color: var(--accent-blue);
         }
-        .tab-bar button.active { 
-            background-color: #007bff; 
-            color: white;
+
+        .sidebar .nav-link.active {
+            color: var(--accent-blue);
+            font-weight: 600;
+            background-color: var(--accent-blue-soft);
+            border-left-color: var(--accent-blue);
         }
-        .tab-content {
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .menu-toggle {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 2001;
+            background-color: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+        }
+        
+        .menu-toggle:hover {
+            border-color: #ced4da;
+            transform: scale(1.05);
+        }
+        
+        .menu-toggle svg {
+            width: 24px;
+            height: 24px;
+            color: var(--text-primary);
+        }
+
+        .content {
+            width: 100%;
+            height: 100vh;
+            transition: margin-left var(--transition-speed) cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .tool-content {
+            width: 100%;
+            height: 100%;
             display: none;
-            /* Full viewport height minus the tab bar */
-            height: calc(100vh - 47px); 
         }
-        .tab-content iframe {
+
+        .tool-content iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 1999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-speed) ease, visibility var(--transition-speed) ease;
+        }
+        
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (min-width: 768px) {
+            .sidebar {
+                transform: translateX(0);
+                box-shadow: none;
+            }
+            .content {
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+            }
+            .menu-toggle, .overlay {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+    </button>
 
-<div class="tab-bar">
-    <button class="tab-link active" onclick="openTool(event, 'gml')">GML Bucket</button>
-    <button class="tab-link" onclick="openTool(event, 'vmta')">VMTA Duplicate</button>
-    <button class="tab-link" onclick="openTool(event, 'aura')">Aura Remover</button>
-    <button class="tab-link" onclick="openTool(event, 'bounce')">Bounce Cleaner</button>
-</div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>GML Tools</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><button class="nav-link active" onclick="openTool(event, 'vmta')">VMTA Duplicate</button></li>
+                <li><button class="nav-link" onclick="openTool(event, 'aura')">Aura Remover</button></li>
+                <li><button class="nav-link" onclick="openTool(event, 'bounce')">Bounce Cleaner</button></li>
+                <li><button class="nav-link" onclick="openTool(event, 'gml')">GML Bucket</button></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <p>Version 2.2</p>
+        </div>
+    </aside>
+    
+    <div class="overlay" id="overlay"></div>
 
-<div id="gml" class="tab-content" style="display: block;">
-    <iframe src="https://gml-bucket-tool.onrender.com/"></iframe>
-</div>
+    <main class="content" id="content">
+        <div id="vmta" class="tool-content" style="display: block;">
+            <iframe src="./vmta-duplicate/index.html"></iframe>
+        </div>
+        <div id="aura" class="tool-content">
+            <iframe src="./auraremover/index.html"></iframe>
+        </div>
+        <div id="bounce" class="tool-content">
+            <iframe src="./bouncecleaner/index.html"></iframe>
+        </div>
+        <div id="gml" class="tool-content">
+            <iframe src="https://gml-bucket-tool.onrender.com/"></iframe>
+        </div>
+    </main>
 
-<div id="vmta" class="tab-content">
-    <iframe src="./vmta-duplicate/index.html"></iframe>
-</div>
+    <script>
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
 
-<div id="aura" class="tab-content">
-    <iframe src="./auraremover/index.html"></iframe>
-</div>
-
-<div id="bounce" class="tab-content">
-     <iframe src="./bouncecleaner/index.html"></iframe>
-</div>
-
-<script>
-    function openTool(evt, toolName) {
-        var i, tabcontent, tablinks;
-        tabcontent = document.getElementsByClassName("tab-content");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
+        function toggleMenu() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
         }
-        tablinks = document.getElementsByClassName("tab-link");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
+
+        menuToggle.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+
+        function openTool(evt, toolName) {
+            const toolContents = document.getElementsByClassName("tool-content");
+            for (let i = 0; i < toolContents.length; i++) {
+                toolContents[i].style.display = "none";
+            }
+
+            const navLinks = document.getElementsByClassName("nav-link");
+            for (let i = 0; i < navLinks.length; i++) {
+                navLinks[i].classList.remove("active");
+            }
+            
+            document.getElementById(toolName).style.display = "block";
+            evt.currentTarget.classList.add("active");
+
+            if (window.innerWidth < 768) {
+                toggleMenu();
+            }
         }
-        document.getElementById(toolName).style.display = "block";
-        evt.currentTarget.className += " active";
-    }
-</script>
+    </script>
 
 </body>
 </html>
+
