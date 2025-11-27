@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>GML Tool Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +21,6 @@
             --accent-blue-soft: #e7f1ff;
             --border-color: rgba(0, 0, 0, 0.07);
             --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
             --transition-speed: 0.3s;
         }
 
@@ -31,200 +31,108 @@
             background-color: var(--bg-main);
             overflow: hidden;
             display: flex;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
         /* --- SIDEBAR --- */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
-            background-image: linear-gradient(180deg, var(--bg-sidebar) 0%, #f8f9fa 100%);
+            background-color: var(--bg-sidebar);
             border-right: 1px solid var(--border-color);
             position: fixed;
-            top: 0;
-            left: 0;
-            transition: width var(--transition-speed) ease, transform var(--transition-speed) cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            top: 0; left: 0;
+            display: flex; flex-direction: column;
+            transition: width var(--transition-speed) ease;
             z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            transform: translateX(-100%); /* Mobile default: hidden */
         }
 
-        /* Desktop: Visible by default */
-        @media (min-width: 768px) {
-            .sidebar { transform: translateX(0); }
-        }
-
-        .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
-
-        /* Collapsed State (Desktop only) */
-        body.sidebar-collapsed .sidebar {
-            width: var(--sidebar-width-collapsed);
-        }
+        body.sidebar-collapsed .sidebar { width: var(--sidebar-width-collapsed); }
 
         .sidebar-header {
-            padding: 1.5rem;
             height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             border-bottom: 1px solid var(--border-color);
             overflow: hidden;
             white-space: nowrap;
         }
         
         .sidebar-header h2 {
-            font-size: 1.5rem;
-            color: var(--text-primary);
-            font-weight: 700;
+            font-size: 1.5rem; color: var(--text-primary); font-weight: 700;
             transition: opacity 0.2s;
         }
 
-        body.sidebar-collapsed .sidebar-header h2 {
-            display: none;
-        }
-        
-        /* Show a mini logo or icon when collapsed if desired, otherwise empty */
+        body.sidebar-collapsed .sidebar-header h2 { display: none; }
         body.sidebar-collapsed .sidebar-header::after {
-            content: "GML";
-            font-weight: 800;
-            color: var(--accent-blue);
+            content: "GML"; font-weight: 800; color: var(--accent-blue);
         }
 
         .sidebar-nav { flex-grow: 1; overflow-y: auto; overflow-x: hidden; }
         .sidebar-nav ul { list-style: none; padding: 1rem 0; }
 
         .sidebar .nav-link {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 1rem 1.5rem;
-            border: none;
-            background: none;
-            text-align: left;
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-            border-left: 4px solid transparent;
-            white-space: nowrap;
-            gap: 12px;
+            display: flex; align-items: center; width: 100%;
+            padding: 1rem 1.5rem; border: none; background: none;
+            text-align: left; font-size: 0.95rem; font-weight: 500;
+            color: var(--text-secondary); cursor: pointer;
+            transition: all 0.2s; border-left: 4px solid transparent;
+            white-space: nowrap; gap: 12px;
         }
 
         .sidebar .nav-link svg {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            color: var(--text-muted);
-            transition: color 0.2s;
+            width: 20px; height: 20px; flex-shrink: 0;
+            color: var(--text-muted); transition: color 0.2s;
         }
 
-        .sidebar .nav-link:hover {
-            background-color: var(--accent-blue-soft);
-            color: var(--accent-blue);
-        }
+        .sidebar .nav-link:hover { background-color: var(--accent-blue-soft); color: var(--accent-blue); }
         .sidebar .nav-link:hover svg { color: var(--accent-blue); }
 
         .sidebar .nav-link.active {
-            color: var(--accent-blue);
-            font-weight: 600;
-            background-color: var(--accent-blue-soft);
-            border-left-color: var(--accent-blue);
+            color: var(--accent-blue); font-weight: 600;
+            background-color: var(--accent-blue-soft); border-left-color: var(--accent-blue);
         }
         .sidebar .nav-link.active svg { color: var(--accent-blue); }
 
-        /* Hide text when collapsed */
-        body.sidebar-collapsed .sidebar .nav-link span {
-            display: none;
-        }
-        
-        body.sidebar-collapsed .sidebar .nav-link {
-            justify-content: center;
-            padding: 1rem 0;
-        }
+        /* Collapsed behavior */
+        body.sidebar-collapsed .sidebar .nav-link span { display: none; }
+        body.sidebar-collapsed .sidebar .nav-link { justify-content: center; padding: 1rem 0; }
 
         .sidebar-footer {
-            padding: 1rem;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding: 1rem 1.5rem; border-top: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between;
         }
         
-        .version-text {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-        
+        .version-text { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
         body.sidebar-collapsed .version-text { display: none; }
 
         .collapse-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-muted);
-            padding: 0.5rem;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+            background: none; border: none; cursor: pointer; color: var(--text-muted);
+            padding: 0.5rem; border-radius: 4px; display: flex; align-items: center;
+            justify-content: center; transition: all 0.2s;
         }
-        
         .collapse-btn:hover { background-color: rgba(0,0,0,0.05); color: var(--text-primary); }
         body.sidebar-collapsed .collapse-btn { transform: rotate(180deg); margin: 0 auto; }
 
         /* --- CONTENT --- */
         .content {
-            width: 100%;
-            height: 100vh;
-            margin-left: 0; /* Default mobile */
+            width: 100%; height: 100vh;
+            margin-left: var(--sidebar-width);
             transition: margin-left var(--transition-speed) ease;
         }
-
-        /* Desktop Content Margin */
-        @media (min-width: 768px) {
-            .content { margin-left: var(--sidebar-width); width: auto; }
-            body.sidebar-collapsed .content { margin-left: var(--sidebar-width-collapsed); }
-        }
+        body.sidebar-collapsed .content { margin-left: var(--sidebar-width-collapsed); }
 
         .tool-content { width: 100%; height: 100%; display: none; }
         .tool-content iframe { width: 100%; height: 100%; border: none; }
 
-        /* --- MOBILE OVERLAY & TOGGLE --- */
-        .menu-toggle {
-            position: fixed; top: 1rem; left: 1rem; z-index: 2001;
-            background-color: var(--bg-sidebar); border: 1px solid var(--border-color);
-            border-radius: 0.5rem; width: 44px; height: 44px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            box-shadow: var(--shadow-md); transition: all 0.2s ease;
-        }
-        .menu-toggle:hover { border-color: #ced4da; transform: scale(1.05); }
-        .menu-toggle svg { width: 24px; height: 24px; color: var(--text-primary); }
-        
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.4); z-index: 1999;
-            opacity: 0; visibility: hidden;
-            transition: opacity var(--transition-speed) ease, visibility var(--transition-speed) ease;
-        }
-        .overlay.show { opacity: 1; visibility: visible; }
-        
-        @media (min-width: 768px) {
-            .menu-toggle, .overlay { display: none; }
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .content { margin-left: 0; }
+            body.sidebar-collapsed .content { margin-left: 0; }
         }
     </style>
 </head>
 <body>
-    <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-        </svg>
-    </button>
-
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2>GML Tools</h2>
@@ -242,7 +150,7 @@
                 <li>
                     <button class="nav-link" onclick="openTool(event, 'aura')">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
                         </svg>
                         <span>Aura Remover</span>
                     </button>
@@ -274,8 +182,6 @@
             </button>
         </div>
     </aside>
-    
-    <div class="overlay" id="overlay"></div>
 
     <main class="content" id="content">
         <div id="vmta" class="tool-content" style="display: block;">
@@ -293,58 +199,34 @@
     </main>
 
     <script>
-        const menuToggle = document.getElementById('menu-toggle');
         const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
         const collapseBtn = document.getElementById('collapse-btn');
         const body = document.body;
 
-        // Mobile Menu Toggle
-        function toggleMenu() {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('show');
-        }
-
-        // Desktop Collapse Toggle
         function toggleCollapse() {
             body.classList.toggle('sidebar-collapsed');
-            // Save preference
-            const isCollapsed = body.classList.contains('sidebar-collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
+            localStorage.setItem('sidebarCollapsed', body.classList.contains('sidebar-collapsed'));
         }
 
-        // Load saved preference
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             body.classList.add('sidebar-collapsed');
         }
 
-        menuToggle.addEventListener('click', toggleMenu);
-        overlay.addEventListener('click', toggleMenu);
         collapseBtn.addEventListener('click', toggleCollapse);
 
         function openTool(evt, toolName) {
-            // Hide all tools
             const toolContents = document.getElementsByClassName("tool-content");
             for (let i = 0; i < toolContents.length; i++) {
                 toolContents[i].style.display = "none";
             }
 
-            // Deactivate all nav links
             const navLinks = document.getElementsByClassName("nav-link");
             for (let i = 0; i < navLinks.length; i++) {
                 navLinks[i].classList.remove("active");
             }
             
-            // Show selected tool
             document.getElementById(toolName).style.display = "block";
-            
-            // Activate clicked link (handle click on icon or span)
             evt.currentTarget.classList.add("active");
-
-            // Close mobile menu if open
-            if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
-                toggleMenu();
-            }
         }
     </script>
 </body>
