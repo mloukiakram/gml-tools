@@ -420,8 +420,12 @@
     const selectAllCheckbox = el('select-all-servers');
     const deleteSelectedBtn = el('delete-selected-btn');
     const STORAGE_KEY = 'domainCleanerDataV8';
+    
+    // Updated Regex to be more flexible (searching instead of strictly matching the whole line)
     const DOMAIN_REGEX = /^(?!:\/\/)([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,63}$/;
+    const DOMAIN_SEARCH_REGEX = /(?!:\/\/)([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,63}/;
     const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
     let appData = { servers: [], bounceHistory: [] }, currentServerId = null;
     let lastResults = { kept: [], removed: [] };
     let currentPage = 1, itemsPerPage = 5;
@@ -694,11 +698,27 @@
           toggleProcessingState(false);
           return;
       }
+      
+      // --- ROBUST EXTRACTION: SEARCH FOR DOMAINS (IGNORE CSV FORMAT) ---
       const toRemoveSet = new Set(getLines(removeBox.value).map(l => l.trim()).filter(Boolean).map(line => {
-        if (EMAIL_REGEX.test(line)) return line.split('@').pop().toLowerCase();
-        if (DOMAIN_REGEX.test(line.toLowerCase())) return line.toLowerCase();
+        
+        // 1. Explicitly check for emails first to correctly handle user@domain.com
+        if (line.includes('@')) {
+             const emailMatch = line.match(/[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+/);
+             if (emailMatch) return emailMatch[0].split('@')[1].toLowerCase();
+        }
+
+        // 2. Scan the line for ANY valid domain string
+        // This ignores commas, IDs, timestamps, and whitespace completely
+        const domainMatch = line.match(DOMAIN_SEARCH_REGEX);
+        if (domainMatch) {
+            return domainMatch[0].toLowerCase();
+        }
+        
         return null;
       }).filter(Boolean));
+      // --- END UPDATE ---
+      
       const keptList = master.filter(domain => !toRemoveSet.has(domain));
       const removedList = master.filter(domain => toRemoveSet.has(domain));
       lastResults = { kept: keptList, removed: removedList };
@@ -872,13 +892,27 @@
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', e => e.target === overlay && hideModal(overlay.id));
         });
+        
+        // --- UPDATED PREVIEW BUTTON LOGIC FOR ROBUST SEARCH ---
         el('preview').addEventListener('click', () => {
             const getLines = (text) => text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
             const extracted = [...new Set(getLines(removeBox.value).map(l => l.trim()).filter(Boolean).map(line => {
-                if (EMAIL_REGEX.test(line)) return line.split('@').pop().toLowerCase();
-                if (DOMAIN_REGEX.test(line.toLowerCase())) return line.toLowerCase();
+                
+                // 1. Check for email
+                if (line.includes('@')) {
+                    const emailMatch = line.match(/[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+/);
+                    if (emailMatch) return emailMatch[0].split('@')[1].toLowerCase();
+                }
+
+                // 2. Scan for domain
+                const domainMatch = line.match(DOMAIN_SEARCH_REGEX);
+                if (domainMatch) {
+                    return domainMatch[0].toLowerCase();
+                }
+
                 return null;
             }).filter(Boolean))];
+            
             if (extracted.length > 0) {
                 el('preview-modal-title').textContent = 'Preview Extracted Domains';
                 el('preview-modal-subtitle').textContent = `Unique domains from the 'Bounced' list.`;
@@ -886,6 +920,8 @@
                 showModal('previewModalOverlay');
             } else showToast("No valid domains found.", 'warning');
         });
+        // --- END UPDATE ---
+
         ['resultsModalClose', 'previewModalClose', 'serverModalClose', 'deleteModalCancel', 'historyModalClose'].forEach(id => {
             if(el(id)) el(id).addEventListener('click', () => hideModal(el(id).closest('.modal-overlay').id));
         });
@@ -924,4 +960,3 @@
   </script>
 </body>
 </html>
-
