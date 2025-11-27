@@ -10,6 +10,7 @@
     <style>
         :root {
             --sidebar-width: 260px;
+            --sidebar-width-collapsed: 70px;
             --bg-main: #f4f7f9;
             --bg-sidebar: #ffffff;
             --text-primary: #212529;
@@ -20,14 +21,10 @@
             --border-color: rgba(0, 0, 0, 0.07);
             --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-            --transition-speed: 0.4s;
+            --transition-speed: 0.3s;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -38,6 +35,7 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
+        /* --- SIDEBAR --- */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
@@ -46,58 +44,88 @@
             position: fixed;
             top: 0;
             left: 0;
-            transform: translateX(-100%);
-            transition: transform var(--transition-speed) cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            transition: width var(--transition-speed) ease, transform var(--transition-speed) cubic-bezier(0.68, -0.55, 0.27, 1.55);
             z-index: 2000;
             display: flex;
             flex-direction: column;
+            transform: translateX(-100%); /* Mobile default: hidden */
         }
 
-        .sidebar.open {
-            transform: translateX(0);
-            box-shadow: var(--shadow-lg);
+        /* Desktop: Visible by default */
+        @media (min-width: 768px) {
+            .sidebar { transform: translateX(0); }
+        }
+
+        .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+
+        /* Collapsed State (Desktop only) */
+        body.sidebar-collapsed .sidebar {
+            width: var(--sidebar-width-collapsed);
         }
 
         .sidebar-header {
             padding: 1.5rem;
-            text-align: center;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+            white-space: nowrap;
         }
         
         .sidebar-header h2 {
             font-size: 1.5rem;
             color: var(--text-primary);
             font-weight: 700;
+            transition: opacity 0.2s;
+        }
+
+        body.sidebar-collapsed .sidebar-header h2 {
+            display: none;
         }
         
-        .sidebar-nav {
-            flex-grow: 1;
+        /* Show a mini logo or icon when collapsed if desired, otherwise empty */
+        body.sidebar-collapsed .sidebar-header::after {
+            content: "GML";
+            font-weight: 800;
+            color: var(--accent-blue);
         }
 
-        .sidebar-nav ul {
-            list-style: none;
-            padding: 1rem 0;
-        }
+        .sidebar-nav { flex-grow: 1; overflow-y: auto; overflow-x: hidden; }
+        .sidebar-nav ul { list-style: none; padding: 1rem 0; }
 
         .sidebar .nav-link {
-            display: block;
+            display: flex;
+            align-items: center;
             width: 100%;
             padding: 1rem 1.5rem;
             border: none;
             background: none;
             text-align: left;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 500;
             color: var(--text-secondary);
             cursor: pointer;
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            transition: all 0.2s;
             border-left: 4px solid transparent;
+            white-space: nowrap;
+            gap: 12px;
+        }
+
+        .sidebar .nav-link svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            color: var(--text-muted);
+            transition: color 0.2s;
         }
 
         .sidebar .nav-link:hover {
             background-color: var(--accent-blue-soft);
             color: var(--accent-blue);
         }
+        .sidebar .nav-link:hover svg { color: var(--accent-blue); }
 
         .sidebar .nav-link.active {
             color: var(--accent-blue);
@@ -105,92 +133,88 @@
             background-color: var(--accent-blue-soft);
             border-left-color: var(--accent-blue);
         }
+        .sidebar .nav-link.active svg { color: var(--accent-blue); }
 
-        .sidebar-footer {
-            padding: 1.5rem;
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border-color);
+        /* Hide text when collapsed */
+        body.sidebar-collapsed .sidebar .nav-link span {
+            display: none;
+        }
+        
+        body.sidebar-collapsed .sidebar .nav-link {
+            justify-content: center;
+            padding: 1rem 0;
         }
 
-        .menu-toggle {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 2001;
-            background-color: var(--bg-sidebar);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            width: 44px;
-            height: 44px;
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .version-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        
+        body.sidebar-collapsed .version-text { display: none; }
+
+        .collapse-btn {
+            background: none;
+            border: none;
             cursor: pointer;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: var(--shadow-md);
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
         
-        .menu-toggle:hover {
-            border-color: #ced4da;
-            transform: scale(1.05);
-        }
-        
-        .menu-toggle svg {
-            width: 24px;
-            height: 24px;
-            color: var(--text-primary);
-        }
+        .collapse-btn:hover { background-color: rgba(0,0,0,0.05); color: var(--text-primary); }
+        body.sidebar-collapsed .collapse-btn { transform: rotate(180deg); margin: 0 auto; }
 
+        /* --- CONTENT --- */
         .content {
             width: 100%;
             height: 100vh;
-            transition: margin-left var(--transition-speed) cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            margin-left: 0; /* Default mobile */
+            transition: margin-left var(--transition-speed) ease;
         }
 
-        .tool-content {
-            width: 100%;
-            height: 100%;
-            display: none;
+        /* Desktop Content Margin */
+        @media (min-width: 768px) {
+            .content { margin-left: var(--sidebar-width); width: auto; }
+            body.sidebar-collapsed .content { margin-left: var(--sidebar-width-collapsed); }
         }
 
-        .tool-content iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+        .tool-content { width: 100%; height: 100%; display: none; }
+        .tool-content iframe { width: 100%; height: 100%; border: none; }
 
+        /* --- MOBILE OVERLAY & TOGGLE --- */
+        .menu-toggle {
+            position: fixed; top: 1rem; left: 1rem; z-index: 2001;
+            background-color: var(--bg-sidebar); border: 1px solid var(--border-color);
+            border-radius: 0.5rem; width: 44px; height: 44px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow-md); transition: all 0.2s ease;
+        }
+        .menu-toggle:hover { border-color: #ced4da; transform: scale(1.05); }
+        .menu-toggle svg { width: 24px; height: 24px; color: var(--text-primary); }
+        
         .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.4);
-            z-index: 1999;
-            opacity: 0;
-            visibility: hidden;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.4); z-index: 1999;
+            opacity: 0; visibility: hidden;
             transition: opacity var(--transition-speed) ease, visibility var(--transition-speed) ease;
         }
+        .overlay.show { opacity: 1; visibility: visible; }
         
-        .overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
         @media (min-width: 768px) {
-            .sidebar {
-                transform: translateX(0);
-                box-shadow: none;
-            }
-            .content {
-                margin-left: var(--sidebar-width);
-                width: calc(100% - var(--sidebar-width));
-            }
-            .menu-toggle, .overlay {
-                display: none;
-            }
+            .menu-toggle, .overlay { display: none; }
         }
     </style>
 </head>
@@ -207,13 +231,47 @@
         </div>
         <nav class="sidebar-nav">
             <ul>
-                <li><button class="nav-link active" onclick="openTool(event, 'vmta')">VMTA Duplicate</button></li>
-                <li><button class="nav-link" onclick="openTool(event, 'aura')">Aura Remover</button></li>
-                <li><button class="nav-link" onclick="openTool(event, 'bounce')">Bounce Cleaner</button></li>
+                <li>
+                    <button class="nav-link active" onclick="openTool(event, 'vmta')">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5" />
+                        </svg>
+                        <span>VMTA Duplicate</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-link" onclick="openTool(event, 'aura')">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                        </svg>
+                        <span>Aura Remover</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-link" onclick="openTool(event, 'bounce')">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                        <span>Bounce Cleaner</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-link" onclick="openTool(event, 'pmta')">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+                        </svg>
+                        <span>PMTA Monitor</span>
+                    </button>
+                </li>
             </ul>
         </nav>
         <div class="sidebar-footer">
-            <p>Version 2.3</p>
+            <span class="version-text">Version 2.4</span>
+            <button class="collapse-btn" id="collapse-btn" title="Toggle Sidebar">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:20px;height:20px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+                </svg>
+            </button>
         </div>
     </aside>
     
@@ -229,40 +287,65 @@
         <div id="bounce" class="tool-content">
             <iframe src="./bouncecleaner/index.html"></iframe>
         </div>
+        <div id="pmta" class="tool-content">
+            <iframe src="http://pmta-monitoring.kesug.com/index.html?i=1"></iframe>
+        </div>
     </main>
 
     <script>
         const menuToggle = document.getElementById('menu-toggle');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
+        const collapseBtn = document.getElementById('collapse-btn');
+        const body = document.body;
 
+        // Mobile Menu Toggle
         function toggleMenu() {
             sidebar.classList.toggle('open');
             overlay.classList.toggle('show');
         }
 
+        // Desktop Collapse Toggle
+        function toggleCollapse() {
+            body.classList.toggle('sidebar-collapsed');
+            // Save preference
+            const isCollapsed = body.classList.contains('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        // Load saved preference
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            body.classList.add('sidebar-collapsed');
+        }
+
         menuToggle.addEventListener('click', toggleMenu);
         overlay.addEventListener('click', toggleMenu);
+        collapseBtn.addEventListener('click', toggleCollapse);
 
         function openTool(evt, toolName) {
+            // Hide all tools
             const toolContents = document.getElementsByClassName("tool-content");
             for (let i = 0; i < toolContents.length; i++) {
                 toolContents[i].style.display = "none";
             }
 
+            // Deactivate all nav links
             const navLinks = document.getElementsByClassName("nav-link");
             for (let i = 0; i < navLinks.length; i++) {
                 navLinks[i].classList.remove("active");
             }
             
+            // Show selected tool
             document.getElementById(toolName).style.display = "block";
+            
+            // Activate clicked link (handle click on icon or span)
             evt.currentTarget.classList.add("active");
 
-            if (window.innerWidth < 768) {
+            // Close mobile menu if open
+            if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
                 toggleMenu();
             }
         }
     </script>
-
 </body>
 </html>
